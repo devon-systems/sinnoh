@@ -5,7 +5,7 @@ _: {
       allowReboot = false;
       dates = "02:00";
       fixedRandomDelay = true;
-      flake = "github:alyraffauf/sinnoh#${config.networking.hostName}";
+      flake = "github:devon-systems/sinnoh#${config.networking.hostName}";
       flags = ["--accept-flake-config"];
       operation = "boot";
       persistent = true;

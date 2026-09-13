@@ -6,7 +6,7 @@ _: {
       ];
 
       variables = let
-        FLAKE = "github:alyraffauf/sinnoh";
+        FLAKE = "github:devon-systems/sinnoh";
       in {
         inherit FLAKE;
         NH_FLAKE = FLAKE;

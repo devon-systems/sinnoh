@@ -8,7 +8,7 @@
       remotes = [
         {
           name = "origin";
-          url = "https://github.com/alyraffauf/sinnoh.git";
+          url = "https://github.com/devon-systems/sinnoh.git";
           branches.main.name = "master";
           poller.period = 600;
         }

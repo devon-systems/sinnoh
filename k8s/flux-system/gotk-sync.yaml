@@ -11,7 +11,7 @@ spec:
     branch: master
   secretRef:
     name: flux-system
-  url: ssh://git@github.com/alyraffauf/sinnoh
+  url: ssh://git@github.com/devon-systems/sinnoh
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
