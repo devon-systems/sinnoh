@@ -1,0 +1,43 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: pg-shared
+  namespace: cnpg-system
+spec:
+  podSelector:
+    matchLabels:
+      cnpg.io/cluster: pg-shared
+  # Preserve outbound API, DNS, and backup traffic.
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: vaultwarden
+          podSelector:
+            matchLabels:
+              app: vaultwarden
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: tranquil-pds
+          podSelector:
+            matchLabels:
+              app: tranquil-pds
+      ports:
+        - protocol: TCP
+          port: 5432
+    # The operator and database peers also use the instance manager.
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: cloudnative-pg
+              app.kubernetes.io/instance: cnpg
+        - podSelector:
+            matchLabels:
+              cnpg.io/cluster: pg-shared
+      ports:
+        - protocol: TCP
+          port: 5432
+        - protocol: TCP
+          port: 8000
