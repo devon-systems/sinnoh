@@ -3,3 +3,4 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - workload.yaml
+  - valkey-network-policy.yaml

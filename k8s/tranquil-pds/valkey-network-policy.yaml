@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: tranquil-pds-valkey
+  namespace: tranquil-pds
+spec:
+  podSelector:
+    matchLabels:
+      app: tranquil-pds-valkey
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: tranquil-pds
+      ports:
+        - protocol: TCP
+          port: 6379
+  egress: []
