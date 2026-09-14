@@ -50,7 +50,7 @@ sops-bootstrap:
     ssh-to-age -i ~/.ssh/id_ed25519.pub
 
 # Regenerate .sops.yaml from keys/*.pub, then re-encrypt every
-# secrets/*.yaml. Run after adding or removing a .pub file.
+# YAML secrets under secrets/ and k8s/secrets/. Run after keys change.
 [group('secrets')]
 sops-rekey:
     #!/usr/bin/env bash
@@ -80,7 +80,7 @@ sops-rekey:
         cat <<'EOF'
 
     creation_rules:
-      - path_regex: ^secrets/.*\.ya?ml$
+      - path_regex: ^(secrets|k8s/secrets)/.*\.ya?ml$
         key_groups:
           - age:
     EOF
@@ -95,7 +95,7 @@ sops-rekey:
     } > .sops.yaml
     echo "regenerated .sops.yaml"
     shopt -s globstar
-    for f in secrets/**/*.yaml secrets/*.yaml; do
+    for f in secrets/**/*.yaml secrets/**/*.yml k8s/secrets/**/*.yaml k8s/secrets/**/*.yml; do
         if [[ "$(sops filestatus "$f")" == *'"encrypted":true'* ]]; then
             echo "rekeying $f"
             sops updatekeys -y "$f"
@@ -104,8 +104,14 @@ sops-rekey:
 
 # Edit a sops-encrypted secrets file. Usage: just sops-edit tailscale.yaml
 [group('secrets')]
+[positional-arguments]
 sops-edit FILE:
-    sops secrets/{{FILE}}
+    #!/usr/bin/env bash
+    set -euo pipefail
+    case "$1" in
+        secrets/*|k8s/secrets/*) sops "$1" ;;
+        *) sops "secrets/$1" ;;
+    esac
 
 ############################################################################
 #

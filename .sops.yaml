@@ -24,7 +24,7 @@ keys:
   - &host_sunnyshore age195mcxysuh5yxcuvpmftsfya3xgh9m2ehusnfsxthe5k8sd4kjv6s4upyl0
 
 creation_rules:
-  - path_regex: ^secrets/.*\.ya?ml$
+  - path_regex: ^(secrets|k8s/secrets)/.*\.ya?ml$
     key_groups:
       - age:
           - *user_aly_canalave

@@ -89,7 +89,7 @@ Never commit decrypted values, private keys, OpenTofu state, or saved plans.
 ```bash
 just sops-bootstrap                         # Install this machine's age key once
 just sops-edit tailscale.yaml               # Edit an encrypted host secret
-just sops-edit kubernetes/pocket-id-env.sops.yaml
+just sops-edit k8s/secrets/vaultwarden-env.sops.yaml
 just sops-rekey                             # Update recipients after keys/ changes
 ```
 
