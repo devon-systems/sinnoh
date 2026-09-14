@@ -1,0 +1,47 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: morgan
+  namespace: morgan
+spec:
+  secretName: morgan-tls
+  issuerRef: { kind: ClusterIssuer, name: letsencrypt-http }
+  dnsNames: [morgantamayo.com, www.morgantamayo.com]
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata: { name: morgan, namespace: morgan }
+spec:
+  ingressClassName: traefik
+  tls:
+    [
+      {
+        hosts: [morgantamayo.com, www.morgantamayo.com],
+        secretName: morgan-tls,
+      },
+    ]
+  rules:
+    - host: morgantamayo.com
+      http:
+        {
+          paths:
+            [
+              {
+                path: /,
+                pathType: Prefix,
+                backend: { service: { name: morgan, port: { name: http } } },
+              },
+            ],
+        }
+    - host: www.morgantamayo.com
+      http:
+        {
+          paths:
+            [
+              {
+                path: /,
+                pathType: Prefix,
+                backend: { service: { name: morgan, port: { name: http } } },
+              },
+            ],
+        }

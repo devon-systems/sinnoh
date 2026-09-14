@@ -1,0 +1,29 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: slingshot
+  namespace: slingshot
+spec:
+  secretName: slingshot-tls
+  issuerRef: { kind: ClusterIssuer, name: letsencrypt }
+  dnsNames: [slingshot.aly.town]
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata: { name: slingshot, namespace: slingshot }
+spec:
+  ingressClassName: traefik
+  tls: [{ hosts: [slingshot.aly.town], secretName: slingshot-tls }]
+  rules:
+    - host: slingshot.aly.town
+      http:
+        {
+          paths:
+            [
+              {
+                path: /,
+                pathType: Prefix,
+                backend: { service: { name: slingshot, port: { name: http } } },
+              },
+            ],
+        }

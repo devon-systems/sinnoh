@@ -1,0 +1,44 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: vaultwarden
+  namespace: vaultwarden
+spec:
+  secretName: vaultwarden-tls
+  issuerRef: { kind: ClusterIssuer, name: letsencrypt }
+  dnsNames: [vault.cute.haus, vault.aly.town]
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata: { name: vaultwarden, namespace: vaultwarden }
+spec:
+  ingressClassName: traefik
+  tls:
+    [{ hosts: [vault.cute.haus, vault.aly.town], secretName: vaultwarden-tls }]
+  rules:
+    - host: vault.cute.haus
+      http:
+        {
+          paths:
+            [
+              {
+                path: /,
+                pathType: Prefix,
+                backend:
+                  { service: { name: vaultwarden, port: { number: 80 } } },
+              },
+            ],
+        }
+    - host: vault.aly.town
+      http:
+        {
+          paths:
+            [
+              {
+                path: /,
+                pathType: Prefix,
+                backend:
+                  { service: { name: vaultwarden, port: { number: 80 } } },
+              },
+            ],
+        }

@@ -1,4 +1,12 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - public.yaml
+  - aly-codes.yaml
+  - atbbs.yaml
+  - morgan.yaml
+  - morsels.yaml
+  - skytrace.yaml
+  - slingshot.yaml
+  - switchyard.yaml
+  - tranquil-pds.yaml
+  - vaultwarden.yaml

@@ -1,0 +1,78 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: tranquil-pds
+  namespace: tranquil-pds
+spec:
+  secretName: tranquil-pds-tls
+  issuerRef: { kind: ClusterIssuer, name: letsencrypt }
+  dnsNames: [aly.social, "*.aly.social"]
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata: { name: tranquil-pds, namespace: tranquil-pds }
+spec:
+  ingressClassName: traefik
+  tls: [{ hosts: [aly.social, "*.aly.social"], secretName: tranquil-pds-tls }]
+  rules:
+    - host: aly.social
+      http:
+        {
+          paths:
+            [
+              {
+                path: /xrpc,
+                pathType: Prefix,
+                backend:
+                  { service: { name: tranquil-pds, port: { number: 80 } } },
+              },
+              {
+                path: /oauth,
+                pathType: Prefix,
+                backend:
+                  { service: { name: tranquil-pds, port: { number: 80 } } },
+              },
+              {
+                path: /.well-known,
+                pathType: Prefix,
+                backend:
+                  { service: { name: tranquil-pds, port: { number: 80 } } },
+              },
+              {
+                path: /u,
+                pathType: Prefix,
+                backend:
+                  { service: { name: tranquil-pds, port: { number: 80 } } },
+              },
+              {
+                path: /health,
+                pathType: Prefix,
+                backend:
+                  { service: { name: tranquil-pds, port: { number: 80 } } },
+              },
+              {
+                path: /favicon.ico,
+                pathType: Exact,
+                backend:
+                  { service: { name: tranquil-pds, port: { number: 80 } } },
+              },
+              {
+                path: /,
+                pathType: Prefix,
+                backend: { service: { name: pacifico, port: { number: 80 } } },
+              },
+            ],
+        }
+    - host: "*.aly.social"
+      http:
+        {
+          paths:
+            [
+              {
+                path: /,
+                pathType: Prefix,
+                backend:
+                  { service: { name: tranquil-pds, port: { number: 80 } } },
+              },
+            ],
+        }

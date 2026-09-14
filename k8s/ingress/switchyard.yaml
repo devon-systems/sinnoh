@@ -1,0 +1,30 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: switchyard
+  namespace: switchyard
+spec:
+  secretName: switchyard-tls
+  issuerRef: { kind: ClusterIssuer, name: letsencrypt }
+  dnsNames: [switchyard.aly.codes]
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata: { name: switchyard, namespace: switchyard }
+spec:
+  ingressClassName: traefik
+  tls: [{ hosts: [switchyard.aly.codes], secretName: switchyard-tls }]
+  rules:
+    - host: switchyard.aly.codes
+      http:
+        {
+          paths:
+            [
+              {
+                path: /,
+                pathType: Prefix,
+                backend:
+                  { service: { name: switchyard, port: { name: http } } },
+              },
+            ],
+        }
