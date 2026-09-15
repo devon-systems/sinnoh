@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: snrld
+  namespace: snrld
+  labels:
+    app: snrld
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: snrld
+  template:
+    metadata:
+      labels:
+        app: snrld
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      topologySpreadConstraints:
+        - maxSkew: 1
+          minDomains: 2
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: snrld
+      containers:
+        - name: snrld
+          image: ghcr.io/alyraffauf/snrld:latest@sha256:2b25602f0604ab47b374416a4d5784f36597b36ae40e472552dc4d4038216ff9
+          ports:
+            - name: http
+              containerPort: 80
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: snrld
+  namespace: snrld
+spec:
+  selector:
+    app: snrld
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

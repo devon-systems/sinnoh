@@ -42,6 +42,17 @@ resource "cloudflare_dns_record" "aly_town_slingshot_a" {
   settings = {}
 }
 
+resource "cloudflare_dns_record" "aly_town_snarled_a" {
+  zone_id  = local.zones.aly_town
+  name     = "snarled.aly.town"
+  type     = "A"
+  content  = local.sunnyshore
+  proxied  = true
+  ttl      = 1
+  tags     = []
+  settings = {}
+}
+
 resource "cloudflare_dns_record" "aly_town_atbbs_a" {
   zone_id  = local.zones.aly_town
   name     = "atbbs.aly.town"

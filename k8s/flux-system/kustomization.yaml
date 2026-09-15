@@ -19,6 +19,7 @@ resources:
   - atbbs.yaml
   - aly-codes.yaml
   - skytrace.yaml
+  - snrld.yaml
   - morgan.yaml
   - switchyard.yaml
   - morsels.yaml
