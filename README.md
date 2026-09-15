@@ -1,4 +1,4 @@
-# 💎 sinnoh
+# sinnoh
 
 Declarative infrastructure for my production services. Sinnoh combines NixOS,
 k3s, Flux, SOPS, and OpenTofu to manage hosts, applications, networking, DNS,
@@ -19,14 +19,14 @@ interface. Flux watches the `master` branch and reconciles the application,
 networking, certificate, database, backup, and secret resources composed by
 `k8s/flux-system/`.
 
-## Repository Layout
+## Repository layout
 
 ```text
 nix/
 ├── hosts/nixos/       Per-host NixOS configuration and hardware state
 └── nixos/             Shared modules, features, services, and users
 k8s/                  Flux, Kustomize, Helm, and application manifests
-secrets/              SOPS-encrypted host and Kubernetes secrets
+secrets/              SOPS-encrypted host secrets
 keys/                 Public SSH keys used to derive age recipients
 terraform/            OpenTofu configuration for Cloudflare DNS
 scripts/              Repository maintenance utilities
@@ -34,83 +34,46 @@ scripts/              Repository maintenance utilities
 
 `flake.nix` imports the flake-parts modules under `nix/` and exposes the
 `sunnyshore` and `canalave` NixOS configurations. Kubernetes applications are
-grouped by service under `k8s/`; `k8s/flux-system/` defines their reconciliation
+grouped by service under `k8s/`. `k8s/flux-system/` defines their reconciliation
 order.
 
-## Development
+## Work locally
 
-Enter the pinned toolchain with `nix develop`, or run `direnv allow` to load it
-automatically. The shell includes Bun, Just, OpenTofu, SOPS, `ssh-to-age`, and
-`blzrd`. Useful commands from the repository root include:
+Enter the pinned development shell with `nix develop`, or use `direnv allow`
+to load it automatically. From the repository root:
 
-```bash
-# Format Nix, YAML, Markdown, TypeScript, and shell files.
+```sh
 nix fmt
-
-# Evaluate the flake and run its configured checks.
 nix flake check
-
-# Render Flux targets and validate Kubernetes resources.
-nix run .#check-k8s
-
-# Build host configurations without activating them.
-nix build .#nixosConfigurations.sunnyshore.config.system.build.toplevel
-nix build .#nixosConfigurations.canalave.config.system.build.toplevel
-
-# Refresh the generated host hardware documentation.
-nix run github:alyraffauf/infra#generate-host-readmes
-
-# Discover repository maintenance recipes.
-just
 ```
 
-The Kubernetes check requires network access to fetch schemas. It validates
-Flux targets and local Helm releases using their configured values. Encrypted SOPS
-documents and generated CRD definitions are explicitly excluded from schema
-validation. Other resources fail if their schema is missing. Remote Helm
-charts are validated as release declarations, not rendered chart contents.
+Run `just` to list maintenance commands. See [AGENTS.md](AGENTS.md) for checks
+specific to your change, generated files, and secret maintenance.
 
-CI evaluates the flake, builds the development shell, and builds both NixOS
-hosts. Kubernetes changes are deployed through Flux after they reach `master`;
-avoid applying repository manifests manually unless recovering the cluster.
+## Deployment
 
-## NixOS Deployments
+`blzrd` deploys `sunnyshore` and `canalave`. For example:
 
-`nix/deployments.nix` registers both hosts with `blzrd`. From the development
-shell, deploy only the intended host whenever possible:
-
-```bash
-blzrd switch sunnyshore   # Activate Sunnyshore and set its boot default
-blzrd switch canalave     # Activate Canalave and set its boot default
-blzrd boot sunnyshore     # Set Sunnyshore's boot default without activating it
-blzrd switch              # Deploy both registered hosts
+```sh
+blzrd switch sunnyshore
 ```
 
-Run the checks and build the affected host first. Supplying no node names
-targets every registered node, so reserve the bare command for coordinated
-fleet deployments.
+`switch` activates the configuration and sets the boot default. `boot` sets
+the boot default without activating it. Deployment checks and precautions are
+in [AGENTS.md](AGENTS.md#deploy-deliberately).
 
-## Secrets and DNS
+Flux deploys Kubernetes workloads from `master`. OpenTofu manages DNS.
 
-Secrets are encrypted with SOPS for the recipients declared in `.sops.yaml`.
-Never commit decrypted values, private keys, OpenTofu state, or saved plans.
+## Secrets
 
-```bash
-just sops-bootstrap                         # Install this machine's age key once
-just sops-edit tailscale.yaml               # Edit an encrypted host secret
-just sops-edit k8s/secrets/vaultwarden-env.sops.yaml
-just sops-rekey                             # Update recipients after keys/ changes
+SOPS encrypts secrets for the recipients in `.sops.yaml`. Public keys live in
+`keys/`. To edit a host secret from the development shell:
+
+```sh
+just sops-edit tailscale.yaml
 ```
 
-Direnv decrypts the Cloudflare and Backblaze credentials used by OpenTofu. The
-configuration manages Cloudflare DNS and stores its remote state in Backblaze
-B2. Review the plan before applying it:
-
-```bash
-tofu -chdir=terraform init
-tofu -chdir=terraform plan
-tofu -chdir=terraform apply
-```
+Direnv loads the encrypted Cloudflare and Backblaze credentials for OpenTofu.
 
 See [AGENTS.md](AGENTS.md) for contribution and validation guidelines. This
 project is available under the [MIT License](LICENSE.md).
