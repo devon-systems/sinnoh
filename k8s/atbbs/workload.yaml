@@ -23,6 +23,10 @@ spec:
           ports:
             - name: telnet
               containerPort: 2323
+          readinessProbe:
+            tcpSocket:
+              port: telnet
+            periodSeconds: 5
           resources:
             requests:
               cpu: 10m

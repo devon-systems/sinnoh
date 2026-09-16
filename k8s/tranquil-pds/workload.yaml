@@ -202,8 +202,7 @@ spec:
             periodSeconds: 5
             failureThreshold: 60
           livenessProbe:
-            httpGet:
-              path: /xrpc/_health
+            tcpSocket:
               port: http
             periodSeconds: 60
             timeoutSeconds: 15
