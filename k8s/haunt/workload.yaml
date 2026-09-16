@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: haunt
+  namespace: haunt
+  labels:
+    app: haunt
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: haunt
+  template:
+    metadata:
+      labels:
+        app: haunt
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      topologySpreadConstraints:
+        - maxSkew: 1
+          minDomains: 2
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: haunt
+      containers:
+        - name: haunt
+          image: ghcr.io/alyraffauf/haunt:latest@sha256:239456ca95f4b45662b0bc44754200a8ad25bbd2d90d65f269838145c9c534d4
+          ports:
+            - name: http
+              containerPort: 80
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: haunt
+  namespace: haunt
+spec:
+  selector:
+    app: haunt
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

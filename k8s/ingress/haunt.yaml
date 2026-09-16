@@ -1,0 +1,29 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: haunt
+  namespace: haunt
+spec:
+  secretName: haunt-tls
+  issuerRef: { kind: ClusterIssuer, name: letsencrypt }
+  dnsNames: [haunt.at]
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata: { name: haunt, namespace: haunt }
+spec:
+  ingressClassName: traefik
+  tls: [{ hosts: [haunt.at], secretName: haunt-tls }]
+  rules:
+    - host: haunt.at
+      http:
+        {
+          paths:
+            [
+              {
+                path: /,
+                pathType: Prefix,
+                backend: { service: { name: haunt, port: { name: http } } },
+              },
+            ],
+        }

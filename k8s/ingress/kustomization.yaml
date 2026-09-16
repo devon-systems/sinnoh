@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - aly-codes.yaml
   - atbbs.yaml
+  - haunt.yaml
   - morgan.yaml
   - morsels.yaml
   - skytrace.yaml
