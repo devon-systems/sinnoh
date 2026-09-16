@@ -28,6 +28,9 @@ spec:
       containers:
         - name: snrld
           image: ghcr.io/alyraffauf/snrld:latest@sha256:a69bdef8022a12c7fd52bc8cef1cca791a4b6f47d383c5d9687309425e3a9bfe
+          env:
+            - name: PUBLIC_URL
+              value: https://snarled.aly.town
           ports:
             - name: http
               containerPort: 80
