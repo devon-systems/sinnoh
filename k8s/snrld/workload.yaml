@@ -27,7 +27,7 @@ spec:
               app: snrld
       containers:
         - name: snrld
-          image: ghcr.io/alyraffauf/snrld:latest@sha256:2b25602f0604ab47b374416a4d5784f36597b36ae40e472552dc4d4038216ff9
+          image: ghcr.io/alyraffauf/snrld:latest@sha256:73d8dcc3234367b71b3e23356b0dd1a812ffed1672a4431e3b7f14dcd12845d2
           ports:
             - name: http
               containerPort: 80
