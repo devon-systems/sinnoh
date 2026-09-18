@@ -9,7 +9,13 @@ metadata:
   name: slingshot
   namespace: slingshot
 spec:
-  replicas: 1
+  replicas: 2
+  minReadySeconds: 10
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   selector:
     matchLabels:
       app.kubernetes.io/name: slingshot
@@ -20,8 +26,16 @@ spec:
     spec:
       automountServiceAccountToken: false
       enableServiceLinks: false
-      nodeSelector:
-        kubernetes.io/hostname: canalave
+      topologySpreadConstraints:
+        - maxSkew: 1
+          minDomains: 2
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          matchLabelKeys:
+            - pod-template-hash
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: slingshot
       securityContext:
         seccompProfile:
           type: RuntimeDefault
@@ -29,6 +43,10 @@ spec:
         - name: slingshot
           image: ghcr.io/alyraffauf/slingshot:latest@sha256:9d5473c132e2b79d9912766b1589a52498c1ceb217a40d7e468f05b873ecb875
           env:
+            - name: SLINGSHOT_COLLECT_METRICS
+              value: "true"
+            - name: SLINGSHOT_BIND_METRICS
+              value: "0.0.0.0:8765"
             - name: SLINGSHOT_CACHE_DIR
               value: /cache
             - name: SLINGSHOT_IDENTITY_CACHE_DISK_DB
@@ -44,14 +62,16 @@ spec:
           ports:
             - name: http
               containerPort: 8080
+            - name: metrics
+              containerPort: 8765
           resources:
             requests:
               cpu: 100m
-              memory: 384Mi
+              memory: 768Mi
               ephemeral-storage: 3Gi
             limits:
               cpu: "2"
-              memory: 1Gi
+              memory: 2Gi
               ephemeral-storage: 4Gi
           startupProbe:
             httpGet:
