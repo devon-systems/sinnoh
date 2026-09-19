@@ -102,22 +102,35 @@ _: {
               steps = specification.thresholds;
             };
           };
-        overrides = lib.optional (type == "table") {
-          matcher = {
-            id = "byRegexp";
-            options = "^(?!Value$).*";
+        overrides =
+          lib.optional (type == "table") {
+            matcher = {
+              id = "byRegexp";
+              options = "^(?!Value$).*";
+            };
+            properties = [
+              {
+                id = "unit";
+                value = "none";
+              }
+              {
+                id = "mappings";
+                value = [];
+              }
+            ];
+          }
+          ++ lib.optional (type == "table" && (specification ? thresholds || specification ? mappings || (specification.unit or "") == "bool")) {
+            matcher = {
+              id = "byName";
+              options = "Value";
+            };
+            properties = [
+              {
+                id = "custom.cellOptions";
+                value.type = "color-text";
+              }
+            ];
           };
-          properties = [
-            {
-              id = "unit";
-              value = "none";
-            }
-            {
-              id = "mappings";
-              value = [];
-            }
-          ];
-        };
       };
       options =
         if type == "stat"

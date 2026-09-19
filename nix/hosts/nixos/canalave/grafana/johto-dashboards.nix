@@ -101,22 +101,35 @@ _: {
               steps = specification.thresholds;
             };
           };
-        overrides = lib.optional (type == "table") {
-          matcher = {
-            id = "byRegexp";
-            options = "^(?!Value$).*";
+        overrides =
+          lib.optional (type == "table") {
+            matcher = {
+              id = "byRegexp";
+              options = "^(?!Value$).*";
+            };
+            properties = [
+              {
+                id = "unit";
+                value = "none";
+              }
+              {
+                id = "mappings";
+                value = [];
+              }
+            ];
+          }
+          ++ lib.optional (type == "table" && (specification ? thresholds || specification ? mappings || (specification.unit or "") == "bool")) {
+            matcher = {
+              id = "byName";
+              options = "Value";
+            };
+            properties = [
+              {
+                id = "custom.cellOptions";
+                value.type = "color-text";
+              }
+            ];
           };
-          properties = [
-            {
-              id = "unit";
-              value = "none";
-            }
-            {
-              id = "mappings";
-              value = [];
-            }
-          ];
-        };
       };
       options =
         if type == "stat"
@@ -465,7 +478,7 @@ _: {
               }
             ];
             unit = "short";
-            targets = [(target ''gotk_resource_info{job="kube-state-metrics",exported_namespace=~"$namespace"}'' "{{customresource_kind}} {{name}} {{controller}}")];
+            targets = [(target ''label_replace(gotk_resource_info{job="kube-state-metrics",exported_namespace=~"$namespace",suspended=""}, "suspended", "false", "suspended", ".*") or gotk_resource_info{job="kube-state-metrics",exported_namespace=~"$namespace",suspended!=""}'' "{{customresource_kind}} {{name}} {{controller}}")];
             description = "Flux panels follow namespace only. Readiness and suspension come from resource state; missing state remains Unknown.";
           }
 
