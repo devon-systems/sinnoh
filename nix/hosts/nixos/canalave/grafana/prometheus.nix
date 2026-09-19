@@ -4,6 +4,7 @@ _: {
       enable = true;
       port = 3020;
       retentionTime = "30d";
+      extraFlags = ["--web.enable-remote-write-receiver"];
       globalConfig = {
         scrape_interval = "30s";
         evaluation_interval = "30s";

@@ -26,6 +26,73 @@ spec:
     alloy:
       configMap:
         content: |-
+          discovery.kubernetes "slingshot" {
+            role = "pod"
+
+            namespaces {
+              names = ["slingshot"]
+            }
+
+            selectors {
+              role  = "pod"
+              label = "app.kubernetes.io/name=slingshot"
+            }
+          }
+
+          discovery.relabel "slingshot" {
+            targets = discovery.kubernetes.slingshot.targets
+
+            rule {
+              source_labels = ["__meta_kubernetes_pod_container_port_name"]
+              regex         = "metrics"
+              action        = "keep"
+            }
+
+            rule {
+              source_labels = ["__meta_kubernetes_pod_phase"]
+              regex         = "Running"
+              action        = "keep"
+            }
+
+            rule {
+              source_labels = ["__meta_kubernetes_namespace"]
+              target_label  = "namespace"
+            }
+
+            rule {
+              source_labels = ["__meta_kubernetes_pod_name"]
+              target_label  = "pod"
+            }
+
+            rule {
+              source_labels = ["__meta_kubernetes_pod_name"]
+              target_label  = "instance"
+            }
+
+            rule {
+              source_labels = ["__meta_kubernetes_pod_node_name"]
+              target_label  = "node"
+            }
+
+            rule {
+              target_label = "cluster"
+              replacement  = "sinnoh"
+            }
+          }
+
+          prometheus.scrape "slingshot" {
+            targets         = discovery.relabel.slingshot.output
+            job_name        = "slingshot"
+            scrape_interval = "30s"
+            forward_to      = [prometheus.remote_write.sinnoh.receiver]
+          }
+
+          prometheus.remote_write "sinnoh" {
+            endpoint {
+              url = "http://10.254.0.3:3020/api/v1/write"
+            }
+          }
+
           discovery.kubernetes "traefik" {
             role = "pod"
 

@@ -53,9 +53,11 @@ _: {
           datasources = [
             {
               name = "Sinnoh Prometheus";
+              uid = "P9A18226D8188C8FB";
               type = "prometheus";
               access = "proxy";
               url = "http://127.0.0.1:3020";
+              jsonData.timeInterval = "30s";
             }
             {
               name = "Sinnoh Loki";
