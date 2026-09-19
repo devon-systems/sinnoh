@@ -26,7 +26,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: slingshot
-          image: ghcr.io/alyraffauf/slingshot:latest@sha256:9c08405caedbca833078e7478aa051a370a5d27654f7965bcf92d292ec067be3
+          image: ghcr.io/alyraffauf/slingshot:latest@sha256:c781b2c3c9cc142ab868a8ca804ee7e81b72c6b5724e9c4b38f5082caad48f8e
           env:
             - name: SLINGSHOT_COLLECT_METRICS
               value: "true"
