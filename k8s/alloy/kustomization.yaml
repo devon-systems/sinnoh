@@ -4,3 +4,4 @@ namespace: flux-system
 resources:
   - repository.yaml
   - release.yaml
+  - kube-state-metrics.yaml

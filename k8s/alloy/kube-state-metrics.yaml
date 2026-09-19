@@ -1,0 +1,78 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: prometheus-community
+  namespace: flux-system
+spec:
+  interval: 24h
+  url: https://prometheus-community.github.io/helm-charts
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kube-state-metrics
+  namespace: flux-system
+spec:
+  interval: 30m
+  releaseName: kube-state-metrics
+  targetNamespace: alloy-system
+  chart:
+    spec:
+      chart: kube-state-metrics
+      version: 8.5.0
+      sourceRef:
+        kind: HelmRepository
+        name: prometheus-community
+        namespace: flux-system
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  values:
+    replicas: 1
+    collectors:
+      - nodes
+      - namespaces
+      - pods
+      - deployments
+      - replicasets
+      - statefulsets
+      - daemonsets
+      - jobs
+      - cronjobs
+    prometheus:
+      monitor:
+        enabled: false
+    resources:
+      requests:
+        cpu: 10m
+        memory: 64Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+    metricAllowlist:
+      - kube_node_info
+      - kube_node_status_allocatable
+      - kube_node_status_condition
+      - kube_pod_info
+      - kube_pod_owner
+      - kube_pod_container_info
+      - kube_pod_container_resource_requests
+      - kube_pod_container_resource_limits
+      - kube_pod_container_status_restarts_total
+      - kube_pod_container_status_last_terminated_reason
+      - kube_pod_container_status_ready
+      - kube_pod_status_phase
+      - kube_replicaset_owner
+      - kube_deployment_spec_replicas
+      - kube_deployment_status_replicas_available
+      - kube_statefulset_replicas
+      - kube_statefulset_status_replicas_ready
+      - kube_daemonset_status_desired_number_scheduled
+      - kube_daemonset_status_number_available
+      - kube_job_status_succeeded
+      - kube_job_status_failed
+      - kube_cronjob_status_last_successful_time

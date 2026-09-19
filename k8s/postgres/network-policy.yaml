@@ -41,3 +41,14 @@ spec:
           port: 5432
         - protocol: TCP
           port: 8000
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: alloy-system
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: alloy
+              app.kubernetes.io/instance: alloy
+      ports:
+        - protocol: TCP
+          port: 9187

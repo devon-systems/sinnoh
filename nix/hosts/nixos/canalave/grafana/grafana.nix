@@ -61,6 +61,7 @@ _: {
             }
             {
               name = "Sinnoh Loki";
+              uid = "P246360FA49B4ADE8";
               type = "loki";
               access = "proxy";
               url = "http://127.0.0.1:3030";

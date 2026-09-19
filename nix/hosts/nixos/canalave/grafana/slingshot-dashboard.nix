@@ -83,6 +83,16 @@ _: {
 
     dashboard = {
       uid = "sinnoh-slingshot";
+      links = [
+        {
+          type = "dashboards";
+          tags = ["sinnoh"];
+          asDropdown = false;
+          includeVars = true;
+          keepTime = true;
+          title = "Sinnoh";
+        }
+      ];
       title = "Slingshot";
       description = "Slingshot application metrics collected every 30 seconds. Request panels exclude root health probes. Exported latency percentiles cover a rolling hour; counters reset when the process restarts.";
       tags = ["sinnoh" "slingshot"];

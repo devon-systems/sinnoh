@@ -1,0 +1,65 @@
+rule_files:
+  - workload-rules.json
+evaluation_interval: 30s
+tests:
+  - interval: 30s
+    input_series:
+      - series: 'kube_pod_owner{job="kube-state-metrics",namespace="web",pod="web-a",owner_kind="ReplicaSet",owner_name="web-123",owner_is_controller="true"}'
+        values: "1+0x10"
+      - series: 'kube_pod_owner{job="kube-state-metrics",namespace="web",pod="web-b",owner_kind="ReplicaSet",owner_name="web-123",owner_is_controller="true"}'
+        values: "1+0x10"
+      - series: 'kube_replicaset_owner{job="kube-state-metrics",namespace="web",replicaset="web-123",owner_kind="Deployment",owner_name="web",owner_is_controller="true"}'
+        values: "1+0x10"
+      - series: 'kube_pod_info{job="kube-state-metrics",namespace="web",pod="web-a",node="sunnyshore",created_by_kind="ReplicaSet"}'
+        values: "1+0x10"
+      - series: 'kube_pod_info{job="kube-state-metrics",namespace="web",pod="web-b",node="canalave",created_by_kind="ReplicaSet"}'
+        values: "1+0x10"
+      - series: 'kube_pod_owner{job="kube-state-metrics",namespace="db",pod="pg-1",owner_kind="Cluster",owner_name="pg",owner_is_controller="true"}'
+        values: "1+0x10"
+      - series: 'kube_pod_info{job="kube-state-metrics",namespace="db",pod="pg-1",node="sunnyshore",created_by_kind="Cluster"}'
+        values: "1+0x10"
+      - series: 'kube_pod_info{job="kube-state-metrics",namespace="tools",pod="debug",node="canalave",created_by_kind=""}'
+        values: "1+0x10"
+      - series: 'container_cpu_usage_seconds_total{job="cadvisor",namespace="web",pod="web-a",node="sunnyshore",container="web",image="web"}'
+        values: "0 30 60 0 30 60 90 120 150 180 210"
+      - series: 'container_cpu_usage_seconds_total{job="cadvisor",namespace="web",pod="web-b",node="canalave",container="web",image="web"}'
+        values: "0+30x10"
+      - series: 'container_cpu_usage_seconds_total{job="cadvisor",namespace="web",pod="web-b",node="canalave",container="POD",image="pause"}'
+        values: "0+3000x10"
+      - series: 'kube_pod_container_info{job="kube-state-metrics",namespace="web",pod="web-a",container="web"}'
+        values: "1+0x10"
+      - series: 'kube_pod_container_info{job="kube-state-metrics",namespace="web",pod="web-b",container="web"}'
+        values: "1+0x10"
+      - series: 'kube_pod_container_resource_limits{job="kube-state-metrics",namespace="web",pod="web-a",container="web",resource="cpu"}'
+        values: "2+0x10"
+    promql_expr_test:
+      - expr: "count(sinnoh_pod_workload_info)"
+        eval_time: 5m
+        exp_samples:
+          - labels: "{}"
+            value: 4
+      - expr: 'sum by (workload, workload_kind) (sinnoh_pod_workload_info{namespace="web"})'
+        eval_time: 5m
+        exp_samples:
+          - labels: '{workload="web",workload_kind="Deployment"}'
+            value: 2
+      - expr: 'sinnoh_pod_workload_info{namespace="tools"}'
+        eval_time: 5m
+        exp_samples:
+          - labels: '{__name__="sinnoh_pod_workload_info",namespace="tools",pod="debug",node="canalave",workload="debug",workload_kind="Pod"}'
+            value: 1
+      - expr: 'sum(rate(container_cpu_usage_seconds_total{job="cadvisor",container!="",container!="POD",image!=""}[2m]))'
+        eval_time: 2m30s
+        exp_samples:
+          - labels: "{}"
+            value: 1.6666666666666665
+      - expr: 'sum by(pod) (kube_pod_container_resource_limits{resource="cpu"} or on(namespace,pod,container) (0 * kube_pod_container_info - 1))'
+        eval_time: 5m
+        exp_samples:
+          - labels: '{pod="web-a"}'
+            value: 2
+          - labels: '{pod="web-b"}'
+            value: -1
+      - expr: 'kube_pod_container_resource_limits{namespace="absent"} or on(namespace,pod,container) (0 * kube_pod_container_info{namespace="absent"} - 1)'
+        eval_time: 5m
+        exp_samples: []

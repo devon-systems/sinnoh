@@ -26,7 +26,11 @@ _: {
           delete_request_store = "filesystem";
         };
 
-        limits_config.retention_period = "30d";
+        limits_config = {
+          retention_period = "30d";
+          # Exact top-path queries aggregate more than the default 500 paths.
+          max_query_series = 10000;
+        };
 
         schema_config.configs = [
           {

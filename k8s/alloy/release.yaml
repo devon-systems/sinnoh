@@ -87,6 +87,102 @@ spec:
             forward_to      = [prometheus.remote_write.sinnoh.receiver]
           }
 
+          discovery.kubernetes "nodes" {
+            role = "node"
+          }
+
+          discovery.relabel "cadvisor" {
+            targets = discovery.kubernetes.nodes.targets
+            rule {
+              source_labels = ["__meta_kubernetes_node_name"]
+              target_label = "node"
+            }
+          }
+
+          prometheus.scrape "cadvisor" {
+            targets = discovery.relabel.cadvisor.output
+            job_name = "cadvisor"
+            scheme = "https"
+            metrics_path = "/metrics/cadvisor"
+            scrape_interval = "30s"
+            authorization {
+              credentials_file = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+            }
+            tls_config {
+              ca_file = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+            }
+            forward_to = [prometheus.relabel.cadvisor.receiver]
+          }
+
+          prometheus.relabel "cadvisor" {
+            forward_to = [prometheus.remote_write.sinnoh.receiver]
+            rule {
+              source_labels = ["__name__"]
+              regex = "up|scrape_.*|container_cpu_usage_seconds_total|container_cpu_cfs_periods_total|container_cpu_cfs_throttled_periods_total|container_memory_working_set_bytes|container_memory_rss|container_oom_events_total"
+              action = "keep"
+            }
+          }
+
+          prometheus.scrape "kube_state_metrics" {
+            targets = [{__address__ = "kube-state-metrics.alloy-system.svc:8080"}]
+            job_name = "kube-state-metrics"
+            scrape_interval = "30s"
+            forward_to = [prometheus.remote_write.sinnoh.receiver]
+          }
+
+          discovery.kubernetes "postgres" {
+            role = "pod"
+            namespaces {
+              names = ["cnpg-system"]
+            }
+            selectors {
+              role = "pod"
+              label = "cnpg.io/cluster=pg-shared"
+            }
+          }
+
+          discovery.relabel "postgres" {
+            targets = discovery.kubernetes.postgres.targets
+            rule {
+              source_labels = ["__meta_kubernetes_pod_container_port_number"]
+              regex = "9187"
+              action = "keep"
+            }
+            rule {
+              source_labels = ["__meta_kubernetes_pod_phase"]
+              regex = "Running"
+              action = "keep"
+            }
+            rule {
+              source_labels = ["__meta_kubernetes_pod_name"]
+              target_label = "pod"
+            }
+            rule {
+              source_labels = ["__meta_kubernetes_pod_node_name"]
+              target_label = "node"
+            }
+            rule {
+              source_labels = ["__meta_kubernetes_namespace"]
+              target_label = "namespace"
+            }
+          }
+
+          prometheus.scrape "postgres" {
+            targets = discovery.relabel.postgres.output
+            job_name = "pg-shared"
+            scrape_interval = "30s"
+            forward_to = [prometheus.relabel.postgres.receiver]
+          }
+
+          prometheus.relabel "postgres" {
+            forward_to = [prometheus.remote_write.sinnoh.receiver]
+            rule {
+              source_labels = ["__name__"]
+              regex = "up|scrape_.*|cnpg_collector_up|cnpg_collector_last_collection_error|cnpg_pg_replication_in_recovery|cnpg_pg_replication_lag|cnpg_pg_replication_streaming_replicas|cnpg_pg_replication_is_wal_receiver_up|cnpg_backends_total|cnpg_pg_database_size_bytes|cnpg_pg_stat_archiver_(archived_count|failed_count|last_archived_time)|barman_cloud_cloudnative_pg_io_(last_failed_backup_timestamp|last_available_backup_timestamp|first_recoverability_point)"
+              action = "keep"
+            }
+          }
+
           prometheus.remote_write "sinnoh" {
             endpoint {
               url = "http://10.254.0.3:3020/api/v1/write"
@@ -154,11 +250,11 @@ spec:
       enableReporting: false
       resources:
         limits:
-          cpu: 200m
-          memory: 256Mi
+          cpu: 300m
+          memory: 384Mi
         requests:
-          cpu: 10m
-          memory: 64Mi
+          cpu: 25m
+          memory: 128Mi
     controller:
       type: deployment
       replicas: 1
