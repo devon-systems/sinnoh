@@ -68,6 +68,19 @@ _: {
             custom = {spanNulls = false;};
             mappings =
               (specification.mappings or [])
+              ++ lib.optional ((specification.unit or "") == "bool") {
+                type = "value";
+                options = {
+                  "0" = {
+                    text = "False";
+                    color = "red";
+                  };
+                  "1" = {
+                    text = "True";
+                    color = "green";
+                  };
+                };
+              }
               ++ map (match: {
                 type = "special";
                 options = {
@@ -98,13 +111,17 @@ _: {
           graphMode = "none";
           text = {
             titleSize = 14;
-            valueSize = 32;
+            valueSize =
+              if (specification.unit or "") == "dateTimeAsIso"
+              then 16
+              else 32;
           };
           colorMode = "value";
         }
         else if type == "table"
         then {
           showHeader = true;
+          sortBy = specification.sortBy or [];
           cellHeight = "sm";
         }
         else {
@@ -279,15 +296,20 @@ _: {
       }
       {
         title = "Top 20 paths by requests";
+        sortBy = [
+          {
+            displayName = "Requests";
+            desc = true;
+          }
+        ];
         datasource = loki;
         type = "table";
         transformations = [
           {
-            id = "reduce";
+            id = "organize";
             options = {
-              reducers = ["lastNotNull"];
-              mode = "seriesToRows";
-              labelsToFields = true;
+              excludeByName.Time = true;
+              renameByName."Value #query-0" = "Requests";
             };
           }
         ];
@@ -456,8 +478,8 @@ _: {
         title = "Postgres scrape and database health";
         type = "stat";
         unit = "bool";
-        targets = [(target ''up{${pg}}'' "{{pod}} scrape") (target ''sum(up{${pg}}) == bool 2'' "Both Postgres instances reachable") (target ''cnpg_collector_up{${pg}}'' "{{pod}} database") (target ''cnpg_collector_last_collection_error{${pg}}'' "{{pod}} collection error")];
-        description = "Scrape and database health should be 1; collection error should be 0. Missing instances are not healthy.";
+        targets = [(target ''up{${pg}}'' "{{pod}} scrape") (target ''sum(up{${pg}}) == bool 2'' "Both Postgres instances reachable") (target ''cnpg_collector_up{${pg}}'' "{{pod}} database") (target ''1 - cnpg_collector_last_collection_error{${pg}}'' "{{pod}} collection healthy")];
+        description = "Scrape, database, and collection health should all be true. Missing instances are not healthy.";
       }
       {
         title = "Primary and replica roles";
