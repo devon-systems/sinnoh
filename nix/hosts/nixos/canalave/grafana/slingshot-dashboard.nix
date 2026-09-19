@@ -13,7 +13,9 @@ _: {
     requests = ''server_request_count{job="slingshot",endpoint!="GET /"}'';
     requestRate = "sum(rate(${requests}[$__rate_interval]))";
     errorRate = ''sum(rate(server_request_count{job="slingshot",endpoint!="GET /",status=~"5.. .*"}[$__rate_interval]))'';
-    fetches = ''{job="slingshot",__name__=~"slingshot_fetch_(record|handle|did_doc)_count"}'';
+    fetchRate = lib.concatStringsSep " + " (map
+      (kind: ''(sum(rate(slingshot_fetch_${kind}_count{job="slingshot"}[$__rate_interval])) or vector(0))'')
+      ["record" "handle" "did_doc"]);
 
     target = expr: legendFormat: {
       inherit expr legendFormat;
@@ -132,7 +134,7 @@ _: {
           x = 18;
           y = 0;
           unit = "ops";
-          targets = [(target "sum(rate(${fetches}[$__rate_interval]))" "Fetches")];
+          targets = [(target fetchRate "Fetches")];
         }
         {
           id = 5;
