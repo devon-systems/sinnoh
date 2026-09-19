@@ -27,7 +27,7 @@ spec:
               app: skytrace
       containers:
         - name: skytrace
-          image: ghcr.io/alyraffauf/skytrace:latest@sha256:55854fcdd9b26d05e8e97cbdce264f1b530a88aecede327bd25c6ba9fa38c3d2
+          image: ghcr.io/alyraffauf/skytrace:latest@sha256:471d267570721f3ff461b8f946352d68cdbfe4535bfd5eac54ec305e3cf73148
           env:
             - name: SKYTRACE_BLOCK_TARGET_DID
               value: "did:plc:jwxdvd2mdtdq7la7toiy2rjc"
