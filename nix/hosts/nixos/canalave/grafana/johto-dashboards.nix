@@ -415,7 +415,7 @@ _: {
             description = "Last known termination reason, not an event count. No termination history shows Unknown.";
           }
           {
-            title = "Container readiness";
+            title = "Active container readiness";
             type = "table";
             transformations = [
               {
@@ -424,7 +424,8 @@ _: {
               }
             ];
             unit = "bool";
-            targets = [(target (joinPods ''kube_pod_container_status_ready{${kubeContainer}}'') "{{pod}} / {{container}}")];
+            targets = [(target (joinPods ''kube_pod_container_status_ready{${kubeContainer}} and on (namespace, pod) (kube_pod_status_phase{${kubeContainer},phase=~"Pending|Running|Unknown"} == 1)'') "{{pod}} / {{container}}")];
+            description = "Readiness of running, pending, and unknown pods. Retained succeeded and failed pods, including evicted pods, are excluded from current readiness.";
           }
           {
             title = "Desired and available deployment replicas";
