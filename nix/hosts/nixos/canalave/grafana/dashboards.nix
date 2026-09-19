@@ -425,13 +425,25 @@ _: {
           }
           {
             title = "Last termination was OOMKilled";
-            type = "stat";
+            type = "table";
+            transformations = [
+              {
+                id = "filterFieldsByName";
+                options.include.names = ["namespace" "pod" "container" "Value"];
+              }
+            ];
             targets = [(target (joinPods ''kube_pod_container_status_last_terminated_reason{${kubeContainer},reason="OOMKilled"}'') "{{pod}} / {{container}}")];
             description = "Last known termination reason, not an event count. No termination history shows Unknown.";
           }
           {
             title = "Container readiness";
-            type = "stat";
+            type = "table";
+            transformations = [
+              {
+                id = "filterFieldsByName";
+                options.include.names = ["namespace" "pod" "container" "Value"];
+              }
+            ];
             unit = "bool";
             targets = [(target (joinPods ''kube_pod_container_status_ready{${kubeContainer}}'') "{{pod}} / {{container}}")];
           }
@@ -451,7 +463,13 @@ _: {
           }
           {
             title = "CronJob last successful completion";
-            type = "stat";
+            type = "table";
+            transformations = [
+              {
+                id = "filterFieldsByName";
+                options.include.names = ["namespace" "cronjob" "Value"];
+              }
+            ];
             unit = "dateTimeAsIso";
             targets = [(target ''kube_cronjob_status_last_successful_time{job="kube-state-metrics",namespace=~"$namespace"} * 1000'' "{{namespace}} / {{cronjob}}")];
             description = "Namespace-wide CronJobs, including those with no current pods. Missing completion remains Unknown.";

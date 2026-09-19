@@ -372,13 +372,25 @@ _: {
           }
           {
             title = "Last termination was OOMKilled";
-            type = "stat";
+            type = "table";
+            transformations = [
+              {
+                id = "filterFieldsByName";
+                options.include.names = ["namespace" "pod" "container" "Value"];
+              }
+            ];
             targets = [(target (joinPods ''kube_pod_container_status_last_terminated_reason{${kubeContainer},reason="OOMKilled"}'') "{{pod}} / {{container}}")];
             description = "Last known termination reason, not an event count. No termination history shows Unknown.";
           }
           {
             title = "Container readiness";
-            type = "stat";
+            type = "table";
+            transformations = [
+              {
+                id = "filterFieldsByName";
+                options.include.names = ["namespace" "pod" "container" "Value"];
+              }
+            ];
             unit = "bool";
             targets = [(target (joinPods ''kube_pod_container_status_ready{${kubeContainer}}'') "{{pod}} / {{container}}")];
           }
@@ -398,7 +410,13 @@ _: {
           }
           {
             title = "CronJob last successful completion";
-            type = "stat";
+            type = "table";
+            transformations = [
+              {
+                id = "filterFieldsByName";
+                options.include.names = ["namespace" "cronjob" "Value"];
+              }
+            ];
             unit = "dateTimeAsIso";
             targets = [(target ''kube_cronjob_status_last_successful_time{job="kube-state-metrics",namespace=~"$namespace"} * 1000'' "{{namespace}} / {{cronjob}}")];
             description = "Namespace-wide CronJobs, including those with no current pods. Missing completion remains Unknown.";
@@ -422,7 +440,13 @@ _: {
 
           {
             title = "Flux pending generations";
-            type = "stat";
+            type = "table";
+            transformations = [
+              {
+                id = "filterFieldsByName";
+                options.include.names = ["customresource_kind" "exported_namespace" "name" "Value"];
+              }
+            ];
             unit = "short";
             targets = [(target ''clamp_min(gotk_resource_generation{job="kube-state-metrics",exported_namespace=~"$namespace"} - gotk_resource_observed_generation{job="kube-state-metrics",exported_namespace=~"$namespace"}, 0)'' "{{customresource_kind}} {{name}} {{controller}}")];
             description = "Flux panels follow namespace only. Readiness and suspension come from resource state; missing state remains Unknown.";
@@ -821,7 +845,13 @@ _: {
 
       {
         title = "Scrub age";
-        type = "stat";
+        type = "table";
+        transformations = [
+          {
+            id = "filterFieldsByName";
+            options.include.names = ["instance" "filesystem" "device" "Value"];
+          }
+        ];
         unit = "s";
         targets = [(target ''time() - johto_btrfs_scrub_completion_timestamp_seconds{${node}}'' "{{filesystem}} device {{device}}")];
         thresholds = [
@@ -842,14 +872,26 @@ _: {
 
       {
         title = "Scrub outcome";
-        type = "stat";
+        type = "table";
+        transformations = [
+          {
+            id = "filterFieldsByName";
+            options.include.names = ["instance" "filesystem" "device" "Value"];
+          }
+        ];
         unit = "bool";
         targets = [(target ''johto_btrfs_scrub_success{${node}}'' "{{filesystem}} device {{device}}")];
       }
 
       {
         title = "Scrub errors";
-        type = "stat";
+        type = "table";
+        transformations = [
+          {
+            id = "filterFieldsByName";
+            options.include.names = ["instance" "filesystem" "device" "Value"];
+          }
+        ];
         unit = "short";
         targets = [(target ''johto_btrfs_scrub_errors{${node}}'' "{{filesystem}} device {{device}}")];
       }
