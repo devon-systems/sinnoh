@@ -29,6 +29,7 @@ _: {
       inherit type datasource;
       interval = "30s";
       inherit (specification) title;
+      transformations = specification.transformations or [];
       description = specification.description or "Missing telemetry is shown as Unknown. Rates account for counter resets.";
       gridPos = {
         x = lib.mod index 2 * 12;
@@ -42,6 +43,10 @@ _: {
           inherit datasource;
           refId = "query-${toString queryIndex}";
           editorMode = "code";
+          format =
+            if type == "table"
+            then "table"
+            else "time_series";
           instant = type == "stat" || type == "table";
           range = type == "timeseries";
           queryType =
@@ -91,7 +96,16 @@ _: {
             values = false;
           };
           graphMode = "none";
+          text = {
+            titleSize = 14;
+            valueSize = 32;
+          };
           colorMode = "value";
+        }
+        else if type == "table"
+        then {
+          showHeader = true;
+          cellHeight = "sm";
         }
         else {
           legend = {
@@ -240,7 +254,7 @@ _: {
         title = "Response bandwidth";
         datasource = loki;
         unit = "Bps";
-        targets = [(target "sum(sum_over_time(${logs} | unwrap bytes | __error__=`` [$__interval])) / $__interval_s" "Response bytes/s")];
+        targets = [(target "sum(sum_over_time(${logs} | unwrap bytes | __error__=`` [$__interval])) / ($__interval_ms / 1000)" "Response bytes/s")];
         description = "Traefik DownstreamContentSize, excluding HTTP and transport overhead.";
       }
       {
@@ -266,7 +280,17 @@ _: {
       {
         title = "Top 20 paths by requests";
         datasource = loki;
-        type = "stat";
+        type = "table";
+        transformations = [
+          {
+            id = "reduce";
+            options = {
+              reducers = ["lastNotNull"];
+              mode = "seriesToRows";
+              labelsToFields = true;
+            };
+          }
+        ];
         targets = [(target "topk(20, sum by (host, path) (count_over_time(${logs} | keep host, path [$__range])))" "{{host}}{{path}}")];
       }
     ];
@@ -290,7 +314,13 @@ _: {
           }
           {
             title = "Pod placement";
-            type = "stat";
+            type = "table";
+            transformations = [
+              {
+                id = "filterFieldsByName";
+                options.include.names = ["namespace" "workload" "pod" "node"];
+              }
+            ];
             targets = [(target selectedPods "{{namespace}} / {{workload_kind}} {{workload}} / {{pod}} on {{node}}")];
             description = "One series per pod. ReplicaSet ownership resolves to its Deployment; Jobs remain individually selectable.";
           }
@@ -329,7 +359,13 @@ _: {
           }
           {
             title = "Container ${resource} limits";
-            type = "stat";
+            type = "table";
+            transformations = [
+              {
+                id = "filterFieldsByName";
+                options.include.names = ["namespace" "pod" "container" "Value"];
+              }
+            ];
             unit =
               if resource == "cpu"
               then "cores"

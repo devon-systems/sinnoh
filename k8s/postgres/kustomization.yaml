@@ -6,3 +6,4 @@ resources:
   - vaultwarden-database.yaml
   - tranquil-database.yaml
   - scheduled-backup.yaml
+  - metrics-network-policy.yaml
