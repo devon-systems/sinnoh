@@ -68,12 +68,15 @@ _: {
             }
             {
               name = "Johto Prometheus";
+              uid = "P9F1EC05FDA06B452";
+              jsonData.timeInterval = "30s";
               type = "prometheus";
               access = "proxy";
               url = "http://100.81.61.31:3020";
             }
             {
               name = "Johto Loki";
+              uid = "P9B94E49EB647514A";
               type = "loki";
               access = "proxy";
               url = "http://100.81.61.31:3030";

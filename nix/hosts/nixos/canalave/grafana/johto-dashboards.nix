@@ -8,16 +8,15 @@ _: {
     source = name: let
       datasource = lib.findFirst (item: item.name == name) null config.services.grafana.provision.datasources.settings.datasources;
     in {inherit (datasource) type uid;};
-    prometheus = source "Sinnoh Prometheus";
-    loki = source "Sinnoh Loki";
+    prometheus = source "Johto Prometheus";
     links = [
       {
         type = "dashboards";
-        tags = ["sinnoh"];
+        tags = ["johto"];
         asDropdown = false;
         includeVars = true;
         keepTime = true;
-        title = "Sinnoh";
+        title = "Johto";
       }
     ];
     target = expr: legendFormat: {inherit expr legendFormat;};
@@ -149,8 +148,8 @@ _: {
     };
     dashboard = uid: title: variables: panels: {
       inherit uid title links;
-      description = "Sinnoh telemetry collected every 30 seconds. Unknown means telemetry is absent, not healthy.";
-      tags = ["sinnoh"];
+      description = "Johto telemetry collected every 30 seconds. Unknown means telemetry is absent, not healthy.";
+      tags = ["johto"];
       schemaVersion = 39;
       version = 1;
       editable = false;
@@ -158,7 +157,7 @@ _: {
       refresh = "30s";
       time = {
         from =
-          if uid == "sinnoh-postgres-backups"
+          if uid == "johto-postgres-backups"
           then "now-7d"
           else "now-6h";
         to = "now";
@@ -168,7 +167,7 @@ _: {
     };
     node = ''job="node",instance=~"$node"'';
     nodeVariable = variable "node" ''label_values(up{job="node"}, instance)'';
-    overview = dashboard "sinnoh-overview" "Sinnoh overview" [nodeVariable] [
+    overview = dashboard "johto-overview" "Johto overview" [nodeVariable] [
       {
         title = "Node exporter reachable";
         type = "stat";
@@ -231,102 +230,50 @@ _: {
         type = "stat";
         targets = [(target ''sum by (instance) (node_systemd_unit_state{${node},state="failed",name=~".+[.]service"})'' "{{instance}}")];
       }
-    ];
-    ingressDirectory = ../../../../../k8s/ingress;
-    ingressLines = lib.concatMap (name: lib.splitString "\n" (builtins.readFile (ingressDirectory + "/${name}"))) (builtins.attrNames (builtins.readDir ingressDirectory));
-    hostMatches = lib.filter (match: match != null) (map (line: builtins.match ''[ ]*- host: "?([^" ]+)"?'' line) ingressLines);
-    hosts = lib.unique (map builtins.head hostMatches);
-    hostPattern = host: lib.replaceStrings ["." "*"] ["[.]" "[^.]+"] host;
-    site = {
-      name = "site";
-      label = "Site";
-      type = "custom";
-      query = lib.concatMapStringsSep "," (host: "${host} : ${hostPattern host}") hosts;
-      multi = true;
-      includeAll = true;
-      allValue = lib.concatMapStringsSep "|" hostPattern hosts;
-      current = {
-        text = "All";
-        value = "$__all";
-      };
-    };
-    # Parse fields at query time so pre-existing log history remains usable.
-    logs = ''{job="kube-system/traefik"} | json host="RequestHost", status="DownstreamStatus", path="RequestPath", bytes="DownstreamContentSize", duration="Duration" | __error__="" | host=~`'' + "\${site:pipe}" + ''` | status!=""'';
-    trafficRate = "sum(rate(${logs}[$__interval]))";
-    traffic = dashboard "sinnoh-site-traffic" "Site traffic" [site] [
+
       {
-        title = "Requests reaching Sinnoh per second";
-        datasource = loki;
-        unit = "reqps";
-        targets = [(target trafficRate "Requests")];
-        description = "Requests recorded by Sinnoh Traefik. Cloudflare cache hits and requests blocked upstream are excluded. No matching logs show no data.";
-      }
-      {
-        title = "Total requests reaching Sinnoh";
-        datasource = loki;
+        title = "Cherrygrove service";
         type = "stat";
-        targets = [(target "sum(count_over_time(${logs}[$__range]))" "Requests")];
+        unit = "short";
+        targets = [(target ''node_systemd_unit_state{job="node",instance="goldenrod",name="microvm@cherrygrove.service",state=~"active|failed"}'' "{{state}}")];
+        description = "Observed only through Goldenrod systemd. No collection inside the VM.";
       }
+
       {
-        title = "Response bandwidth";
-        datasource = loki;
-        unit = "Bps";
-        targets = [(target "sum(sum_over_time(${logs} | unwrap bytes | __error__=`` [$__interval])) / ($__interval_ms / 1000)" "Response bytes/s")];
-        description = "Traefik DownstreamContentSize, excluding HTTP and transport overhead.";
-      }
-      {
-        title = "HTTP status breakdown";
-        datasource = loki;
-        unit = "reqps";
-        targets = [(target "sum by (status) (rate(${logs}[$__interval]))" "{{status}}")];
-      }
-      {
-        title = "5xx responses";
-        datasource = loki;
-        unit = "percentunit";
-        targets = [(target "(sum(rate(${logs} | status=~`5..` [$__interval])) or (${trafficRate} * 0)) / (${trafficRate})" "5xx share")];
-        description = "Zero only when matching requests exist without server errors. Empty traffic has no percentage.";
-      }
-      {
-        title = "Request duration p50 / p95 / p99";
-        datasource = loki;
-        unit = "s";
-        targets = map (quantile: target "quantile_over_time(${quantile}, ${logs} | unwrap duration | __error__=`` [$__interval]) by () / 1e9" "q${quantile}") ["0.50" "0.95" "0.99"];
-        description = "Traefik Duration converted from nanoseconds. Percentiles include all selected sites and Traefik pods.";
-      }
-      {
-        title = "Top 20 paths by requests";
-        sortBy = [
-          {
-            displayName = "Requests";
-            desc = true;
-          }
-        ];
-        datasource = loki;
+        title = "Collector health";
         type = "table";
         transformations = [
           {
-            id = "organize";
-            options = {
-              excludeByName.Time = true;
-              renameByName."Value #query-0" = "Requests";
-            };
+            id = "filterFieldsByName";
+            options.include.names = ["instance" "collector" "Value"];
           }
         ];
-        targets = [(target "topk(20, sum by (host, path) (count_over_time(${logs} | keep host, path [$__range])))" "{{host}}{{path}}")];
+        unit = "bool";
+        targets = [(target ''node_scrape_collector_success{${node}}'' "{{instance}} {{collector}}")];
+      }
+
+      {
+        title = "CPU and IO pressure";
+        type = "timeseries";
+        unit = "percentunit";
+        targets = [
+          (target ''rate(node_pressure_cpu_waiting_seconds_total{${node}}[$__rate_interval])'' "{{instance}} CPU waiting")
+          (target ''rate(node_pressure_io_waiting_seconds_total{${node}}[$__rate_interval])'' "{{instance}} IO waiting")
+          (target ''rate(node_pressure_io_stalled_seconds_total{${node}}[$__rate_interval])'' "{{instance}} IO stalled")
+        ];
       }
     ];
-    selectedPods = ''sinnoh_pod_workload_info{node=~"$node",namespace=~"$namespace",workload=~"$workload",pod=~"$pod"}'';
+    selectedPods = ''johto_pod_workload_info{node=~"$node",namespace=~"$namespace",workload=~"$workload",pod=~"$pod"}'';
     container = ''job="cadvisor",container!="",container!="POD",image!="",namespace=~"$namespace",pod=~"$pod",node=~"$node"'';
     joinPods = expression: "(${expression}) * on (namespace, pod) group_left(workload, workload_kind) ${selectedPods}";
     kubeContainer = ''job="kube-state-metrics",namespace=~"$namespace",pod=~"$pod"'';
-    workloadVariable = variable "workload" ''label_values(sinnoh_pod_workload_info{node=~"$node",namespace=~"$namespace"}, workload)'';
+    workloadVariable = variable "workload" ''label_values(johto_pod_workload_info{node=~"$node",namespace=~"$namespace"}, workload)'';
     workloads =
-      dashboard "sinnoh-kubernetes-workloads" "Kubernetes workloads" [
+      dashboard "johto-kubernetes-workloads" "Kubernetes workloads" [
         (variable "node" ''label_values(kube_node_info{job="kube-state-metrics"}, node)'')
-        (variable "namespace" ''label_values(sinnoh_pod_workload_info{node=~"$node"}, namespace)'')
+        (variable "namespace" ''label_values(johto_pod_workload_info{node=~"$node"}, namespace)'')
         workloadVariable
-        (variable "pod" ''label_values(sinnoh_pod_workload_info{node=~"$node",namespace=~"$namespace",workload=~"$workload"}, pod)'')
+        (variable "pod" ''label_values(johto_pod_workload_info{node=~"$node",namespace=~"$namespace",workload=~"$workload"}, pod)'')
       ] ([
           {
             title = "Collector scrape health";
@@ -456,6 +403,46 @@ _: {
             targets = [(target ''kube_cronjob_status_last_successful_time{job="kube-state-metrics",namespace=~"$namespace"} * 1000'' "{{namespace}} / {{cronjob}}")];
             description = "Namespace-wide CronJobs, including those with no current pods. Missing completion remains Unknown.";
           }
+
+          {
+            title = "Flux readiness";
+            type = "table";
+            unit = "short";
+            targets = [(target ''gotk_resource_info{job="kube-state-metrics",exported_namespace=~"$namespace"}'' "{{customresource_kind}} {{name}} {{controller}}")];
+            description = "Flux panels follow namespace only. Readiness and suspension come from resource state; missing state remains Unknown.";
+          }
+
+          {
+            title = "Flux suspended resources";
+            type = "table";
+            unit = "short";
+            targets = [(target ''gotk_resource_info{job="kube-state-metrics",exported_namespace=~"$namespace",suspended="true"}'' "{{customresource_kind}} {{name}} {{controller}}")];
+            description = "Flux panels follow namespace only. Readiness and suspension come from resource state; missing state remains Unknown.";
+          }
+
+          {
+            title = "Flux pending generations";
+            type = "stat";
+            unit = "short";
+            targets = [(target ''clamp_min(gotk_resource_generation{job="kube-state-metrics",exported_namespace=~"$namespace"} - gotk_resource_observed_generation{job="kube-state-metrics",exported_namespace=~"$namespace"}, 0)'' "{{customresource_kind}} {{name}} {{controller}}")];
+            description = "Flux panels follow namespace only. Readiness and suspension come from resource state; missing state remains Unknown.";
+          }
+
+          {
+            title = "Flux reconciliation failures";
+            type = "timeseries";
+            unit = "short";
+            targets = [(target ''sum by (controller) (increase(controller_runtime_reconcile_total{job="flux",result="error"}[$__range]))'' "{{customresource_kind}} {{name}} {{controller}}")];
+            description = "Flux panels follow namespace only. Readiness and suspension come from resource state; missing state remains Unknown.";
+          }
+
+          {
+            title = "Flux reconciliation duration p95";
+            type = "timeseries";
+            unit = "s";
+            targets = [(target ''histogram_quantile(0.95, sum by (le,kind,name,namespace) (rate(gotk_reconcile_duration_seconds_bucket{job="flux",namespace=~"$namespace"}[$__rate_interval])))'' "{{customresource_kind}} {{name}} {{controller}}")];
+            description = "Flux panels follow namespace only. Readiness and suspension come from resource state; missing state remains Unknown.";
+          }
         ]);
     pg = ''job="pg-shared"'';
     backup = ''job="node",instance=~"$node"'';
@@ -473,12 +460,12 @@ _: {
         value = 172800;
       }
     ];
-    backups = dashboard "sinnoh-postgres-backups" "Postgres and backups" [nodeVariable] [
+    backups = dashboard "johto-postgres-backups" "Postgres and backups" [nodeVariable] [
       {
         title = "Postgres scrape and database health";
         type = "stat";
         unit = "bool";
-        targets = [(target ''up{${pg}}'' "{{pod}} scrape") (target ''sum(up{${pg}}) == bool 2'' "Both Postgres instances reachable") (target ''cnpg_collector_up{${pg}}'' "{{pod}} database") (target ''1 - cnpg_collector_last_collection_error{${pg}}'' "{{pod}} collection healthy")];
+        targets = [(target ''up{${pg}}'' "{{pod}} scrape") (target ''sum(up{${pg}}) == bool 1'' "Postgres instance reachable") (target ''cnpg_collector_up{${pg}}'' "{{pod}} database") (target ''1 - cnpg_collector_last_collection_error{${pg}}'' "{{pod}} collection healthy")];
         description = "Scrape, database, and collection health should all be true. Missing instances are not healthy.";
       }
       {
@@ -505,13 +492,16 @@ _: {
         targets = [(target ''cnpg_pg_database_size_bytes{${pg}}'' "{{pod}} / {{datname}}")];
       }
       {
-        title = "Replica lag";
-        unit = "s";
-        targets = [(target ''cnpg_pg_replication_lag{${pg}} and on(pod) (cnpg_pg_replication_in_recovery{${pg}} == 1)'' "{{pod}}")];
-      }
-      {
-        title = "Streaming replication";
-        targets = [(target ''cnpg_pg_replication_streaming_replicas{${pg}} and on(pod) (cnpg_pg_replication_in_recovery{${pg}} == 0)'' "{{pod}} connected replicas") (target ''cnpg_pg_replication_is_wal_receiver_up{${pg}} and on(pod) (cnpg_pg_replication_in_recovery{${pg}} == 1)'' "{{pod}} WAL receiver up")];
+        title = "Replication";
+        type = "stat";
+        targets = [(target ''0 * cnpg_collector_up{${pg}}'' "pg-shared") (target ''0 * pg_up{job="immich-postgres"}'' "Immich")];
+        mappings = [
+          {
+            type = "value";
+            options."0".text = "Not configured";
+          }
+        ];
+        description = "Both Johto databases have one instance. Replication is not configured.";
       }
       {
         title = "WAL archiving outcomes";
@@ -570,8 +560,8 @@ _: {
             desc = false;
           }
         ];
-        targets = [(target ''sinnoh_backup_job_info{${backup}}'' "{{instance}} / {{backup}}")];
-        description = "Derived from every configured restic job. Includes Sunnyshore k3s and k3s-local-path, and Canalave Grafana, Loki and Prometheus.";
+        targets = [(target ''johto_backup_job_info{${backup}}'' "{{instance}} / {{backup}}")];
+        description = "Derived from every configured restic job. Includes all 16 configured Goldenrod and Olivine jobs.";
       }
       {
         title = "Host backup reporting health";
@@ -597,7 +587,7 @@ _: {
         ];
         unit = "s";
         thresholds = backupAge;
-        targets = [(target ''time() - sinnoh_backup_last_success_timestamp_seconds{${backup}}'' "{{instance}} / {{backup}}")];
+        targets = [(target ''time() - johto_backup_last_success_timestamp_seconds{${backup}}'' "{{instance}} / {{backup}}")];
         description = "Warning after 28 hours, critical after 48 hours. Unknown until a successful completion is observed or seeded from systemd.";
       }
       {
@@ -615,7 +605,7 @@ _: {
             desc = false;
           }
         ];
-        targets = [(target ''sinnoh_backup_last_run_success{${backup}}'' "{{instance}} / {{backup}}")];
+        targets = [(target ''johto_backup_last_run_success{${backup}}'' "{{instance}} / {{backup}}")];
         mappings = [
           {
             type = "value";
@@ -649,7 +639,7 @@ _: {
           }
         ];
         unit = "dateTimeAsIso";
-        targets = [(target ''sinnoh_backup_last_completion_timestamp_seconds{${backup}} * 1000'' "{{instance}} / {{backup}}")];
+        targets = [(target ''johto_backup_last_completion_timestamp_seconds{${backup}} * 1000'' "{{instance}} / {{backup}}")];
       }
       {
         title = "Host backup last success";
@@ -667,18 +657,321 @@ _: {
           }
         ];
         unit = "dateTimeAsIso";
-        targets = [(target ''sinnoh_backup_last_success_timestamp_seconds{${backup}} * 1000'' "{{instance}} / {{backup}}")];
+        targets = [(target ''johto_backup_last_success_timestamp_seconds{${backup}} * 1000'' "{{instance}} / {{backup}}")];
+      }
+
+      {
+        title = "Immich Postgres health";
+        type = "stat";
+        unit = "bool";
+        targets = [(target ''pg_up{job="immich-postgres"}'' "{{datname}} {{mode}}")];
+        description = "Immich uses database-dump recovery. Files are backed up after the database dump while applications remain online; there is no WAL recovery window.";
+      }
+
+      {
+        title = "Immich connections";
+        type = "timeseries";
+        unit = "short";
+        targets = [(target ''pg_stat_database_numbackends{job="immich-postgres"}'' "{{datname}} {{mode}}")];
+        description = "Immich uses database-dump recovery. Files are backed up after the database dump while applications remain online; there is no WAL recovery window.";
+      }
+
+      {
+        title = "Immich database sizes";
+        type = "timeseries";
+        unit = "bytes";
+        targets = [(target ''pg_database_size_bytes{job="immich-postgres"}'' "{{datname}} {{mode}}")];
+        description = "Immich uses database-dump recovery. Files are backed up after the database dump while applications remain online; there is no WAL recovery window.";
+      }
+
+      {
+        title = "Immich transactions";
+        type = "timeseries";
+        unit = "ops";
+        targets = [(target ''rate(pg_stat_database_xact_commit{job="immich-postgres"}[$__rate_interval])'' "{{datname}} {{mode}}")];
+        description = "Immich uses database-dump recovery. Files are backed up after the database dump while applications remain online; there is no WAL recovery window.";
+      }
+
+      {
+        title = "Immich locks";
+        type = "timeseries";
+        unit = "short";
+        targets = [(target ''pg_locks_count{job="immich-postgres"}'' "{{datname}} {{mode}}")];
+        description = "Immich uses database-dump recovery. Files are backed up after the database dump while applications remain online; there is no WAL recovery window.";
+      }
+
+      {
+        title = "pg-shared transactions";
+        type = "timeseries";
+        unit = "ops";
+        targets = [(target ''rate(cnpg_pg_stat_database_xact_commit{${pg}}[$__rate_interval])'' "{{datname}} {{mode}}")];
+      }
+
+      {
+        title = "pg-shared waiting backends";
+        type = "timeseries";
+        unit = "short";
+        targets = [(target ''cnpg_backends_waiting_total{${pg}}'' "{{datname}} {{mode}}")];
+      }
+
+      {
+        title = "pg-shared deadlocks";
+        type = "timeseries";
+        unit = "ops";
+        targets = [(target ''rate(cnpg_pg_stat_database_deadlocks{${pg}}[$__rate_interval])'' "{{datname}} {{mode}}")];
+      }
+
+      {
+        title = "Immich validated database dump age";
+        type = "stat";
+        unit = "s";
+        targets = [(target ''time() - johto_immich_dump_timestamp_seconds{job="node",instance="goldenrod"}'' "{{datname}} {{mode}}")];
+        description = "Immich uses database-dump recovery. Files are backed up after the database dump while applications remain online; there is no WAL recovery window.";
+        thresholds = backupAge;
+      }
+
+      {
+        title = "Immich offsite backup age";
+        type = "stat";
+        unit = "s";
+        targets = [(target ''time() - johto_backup_last_success_timestamp_seconds{job="node",instance="goldenrod",backup="immich"}'' "{{datname}} {{mode}}")];
+        description = "Immich uses database-dump recovery. Files are backed up after the database dump while applications remain online; there is no WAL recovery window.";
+        thresholds = backupAge;
+      }
+    ];
+    storage = dashboard "johto-storage" "Storage and disks" [nodeVariable (variable "disk" ''label_values(node_disk_info{${node}}, device)'') (variable "mountpoint" ''label_values(node_filesystem_size_bytes{${node},mountpoint!~"/var/lib/kubelet/.*"}, mountpoint)'')] [
+      {
+        title = "Data and Media used capacity";
+        type = "stat";
+        unit = "percentunit";
+        targets = [(target ''1 - max by (instance,mountpoint) (node_filesystem_avail_bytes{${node},mountpoint=~"/mnt/(Data|Media)"}) / max by (instance,mountpoint) (node_filesystem_size_bytes{${node},mountpoint=~"/mnt/(Data|Media)"})'' "{{instance}} {{mountpoint}}")];
+        description = "Filesystem capacity is counted once per mountpoint, never summed across physical disks. Disk filters apply to physical disk panels only.";
+      }
+
+      {
+        title = "Filesystem available bytes";
+        type = "timeseries";
+        unit = "bytes";
+        targets = [(target ''max by (instance,mountpoint) (node_filesystem_avail_bytes{${node},mountpoint=~"$mountpoint",fstype!~"tmpfs|devtmpfs|overlay|squashfs",mountpoint!~"/var/lib/kubelet/.*"})'' "{{instance}} {{mountpoint}}")];
+      }
+
+      {
+        title = "Filesystem capacity";
+        type = "timeseries";
+        unit = "bytes";
+        targets = [(target ''max by (instance,mountpoint) (node_filesystem_size_bytes{${node},mountpoint=~"$mountpoint",fstype!~"tmpfs|devtmpfs|overlay|squashfs",mountpoint!~"/var/lib/kubelet/.*"})'' "{{instance}} {{mountpoint}}")];
+        description = "Filesystem capacity is counted once per mountpoint, never summed across physical disks. Disk filters apply to physical disk panels only.";
+      }
+
+      {
+        title = "Disk read bytes";
+        type = "timeseries";
+        unit = "Bps";
+        targets = [(target ''rate(node_disk_read_bytes_total{${node},device=~"$disk"}[$__rate_interval])'' "{{instance}} {{device}}")];
+      }
+
+      {
+        title = "Disk write bytes";
+        type = "timeseries";
+        unit = "Bps";
+        targets = [(target ''rate(node_disk_written_bytes_total{${node},device=~"$disk"}[$__rate_interval])'' "{{instance}} {{device}}")];
+      }
+
+      {
+        title = "Disk busy";
+        type = "timeseries";
+        unit = "percentunit";
+        targets = [(target ''rate(node_disk_io_time_seconds_total{${node},device=~"$disk"}[$__rate_interval])'' "{{instance}} {{device}}")];
+      }
+
+      {
+        title = "SMART health";
+        type = "stat";
+        unit = "bool";
+        targets = [(target ''smartctl_device_smart_status{job="smartctl",instance=~"$node",device=~"$disk"}'' "{{device}}")];
+      }
+
+      {
+        title = "Disk temperatures";
+        type = "timeseries";
+        unit = "celsius";
+        targets = [(target ''smartctl_device_temperature{job="smartctl",instance=~"$node",device=~"$disk"}'' "{{device}} {{temperature_type}}")];
+      }
+
+      {
+        title = "NVMe percentage used";
+        type = "stat";
+        unit = "percent";
+        targets = [(target ''smartctl_device_percentage_used{job="smartctl",instance=~"$node",device=~"$disk"}'' "{{device}}")];
+      }
+
+      {
+        title = "SATA SSD life remaining";
+        type = "stat";
+        unit = "percent";
+        targets = [(target ''smartctl_device_attribute{job="smartctl",instance=~"$node",device=~"$disk",attribute_name="Percent_Lifetime_Remain",attribute_value_type="value"}'' "{{device}}")];
+      }
+
+      {
+        title = "Btrfs device errors";
+        type = "timeseries";
+        unit = "short";
+        targets = [(target ''node_btrfs_device_errors_total{${node}}'' "{{instance}} {{btrfs_dev_uuid}} {{type}}")];
+      }
+
+      {
+        title = "Scrub age";
+        type = "stat";
+        unit = "s";
+        targets = [(target ''time() - johto_btrfs_scrub_completion_timestamp_seconds{${node}}'' "{{filesystem}} device {{device}}")];
+        thresholds = [
+          {
+            color = "green";
+            value = null;
+          }
+          {
+            color = "orange";
+            value = 3024000;
+          }
+          {
+            color = "red";
+            value = 3888000;
+          }
+        ];
+      }
+
+      {
+        title = "Scrub outcome";
+        type = "stat";
+        unit = "bool";
+        targets = [(target ''johto_btrfs_scrub_success{${node}}'' "{{filesystem}} device {{device}}")];
+      }
+
+      {
+        title = "Scrub errors";
+        type = "stat";
+        unit = "short";
+        targets = [(target ''johto_btrfs_scrub_errors{${node}}'' "{{filesystem}} device {{device}}")];
+      }
+
+      {
+        title = "NFS server activity";
+        type = "timeseries";
+        unit = "ops";
+        targets = [(target ''rate(node_nfsd_requests_total{${node}}[$__rate_interval])'' "{{instance}} {{method}}")];
+      }
+
+      {
+        title = "NFS errors and retransmissions";
+        type = "timeseries";
+        unit = "ops";
+        targets = [(target ''rate({__name__=~"node_nfsd_rpc_errors_total|node_nfs_rpc_retransmissions_total",${node}}[$__rate_interval])'' "{{instance}} {{__name__}}")];
+      }
+    ];
+    media = dashboard "johto-media-services" "Media services" [(variable "application" ''label_values(exportarr_app_info, job)'')] [
+      {
+        title = "Exporter health";
+        type = "stat";
+        unit = "bool";
+        targets = [(target ''up{job=~"$application",job=~"sonarr|radarr|lidarr|prowlarr|bazarr"}'' "{{job}}")];
+      }
+
+      {
+        title = "Application health";
+        type = "stat";
+        unit = "bool";
+        targets = [(target ''{__name__=~"(sonarr|radarr|lidarr|prowlarr|bazarr)_system_status",job=~"$application"}'' "{{job}}")];
+      }
+
+      {
+        title = "Health issues";
+        type = "timeseries";
+        unit = "short";
+        targets = [(target ''{__name__=~"(sonarr|radarr|lidarr|prowlarr|bazarr)_system_health_issues",job=~"$application"}'' "{{job}} {{message}}")];
+      }
+
+      {
+        title = "Sonarr queue";
+        type = "stat";
+        unit = "short";
+        targets = [(target ''sum by(job) (sonarr_queue_total{job=~"$application"}) or on(job) (0 * (sonarr_system_status{job=~"$application"} == 1) and on(job) (up{job="sonarr"} == 1) unless on(job) (increase(sonarr_scrape_requests_total{code!~"2.."}[2m]) > 0))'' "{{job}}")];
+        description = "An absent queue is zero only with current successful application telemetry and no recent failed requests.";
+      }
+
+      {
+        title = "Radarr queue";
+        type = "stat";
+        unit = "short";
+        targets = [(target ''sum by(job) (radarr_queue_total{job=~"$application"}) or on(job) (0 * (radarr_system_status{job=~"$application"} == 1) and on(job) (up{job="radarr"} == 1) unless on(job) (increase(radarr_scrape_requests_total{code!~"2.."}[2m]) > 0))'' "{{job}}")];
+        description = "An absent queue is zero only with current successful application telemetry and no recent failed requests.";
+      }
+
+      {
+        title = "Lidarr queue";
+        type = "stat";
+        unit = "short";
+        targets = [(target ''sum by(job) (lidarr_queue_total{job=~"$application"}) or on(job) (0 * (lidarr_system_status{job=~"$application"} == 1) and on(job) (up{job="lidarr"} == 1) unless on(job) (increase(lidarr_scrape_requests_total{code!~"2.."}[2m]) > 0))'' "{{job}}")];
+        description = "An absent queue is zero only with current successful application telemetry and no recent failed requests.";
+      }
+
+      {
+        title = "Library totals";
+        type = "timeseries";
+        unit = "short";
+        targets = [(target ''{__name__=~"sonarr_series_total|sonarr_episode_total|radarr_movie_total|lidarr_artists_total|lidarr_albums_total|lidarr_songs_total",job=~"$application"}'' "{{job}} {{__name__}} {{indexer}} {{language}}")];
+      }
+
+      {
+        title = "Missing content and subtitles";
+        type = "timeseries";
+        unit = "short";
+        targets = [(target ''{__name__=~"sonarr_episode_missing_total|radarr_movie_missing_total|lidarr_albums_missing_total|bazarr_(movie_)?subtitles_missing_total",job=~"$application"}'' "{{job}} {{__name__}} {{indexer}} {{language}}")];
+      }
+
+      {
+        title = "Indexer availability";
+        type = "timeseries";
+        unit = "short";
+        targets = [(target ''{__name__=~"prowlarr_indexer_enabled_total|prowlarr_indexer_unavailable",job=~"$application"}'' "{{job}} {{__name__}} {{indexer}} {{language}}")];
+      }
+
+      {
+        title = "Indexer response times";
+        type = "timeseries";
+        unit = "ms";
+        targets = [(target ''{__name__=~"prowlarr_indexer_average_response_time_ms",job=~"$application"}'' "{{job}} {{__name__}} {{indexer}} {{language}}")];
+      }
+
+      {
+        title = "Indexer failures in application history";
+        type = "timeseries";
+        unit = "short";
+        targets = [(target ''{__name__=~"prowlarr_indexer_failed_(queries|auth_queries|grabs|rss_queries)_total",job=~"$application"}'' "{{job}} {{__name__}} {{indexer}} {{language}}")];
+      }
+
+      {
+        title = "Collection duration";
+        type = "timeseries";
+        unit = "s";
+        targets = [(target ''{__name__=~"(sonarr|radarr|lidarr|prowlarr|bazarr)_scrape_duration_seconds",job=~"$application"}'' "{{job}} {{__name__}} {{indexer}} {{language}}")];
+      }
+
+      {
+        title = "Application request failures";
+        type = "timeseries";
+        unit = "ops";
+        targets = [(target ''sum by(job,code) (rate({__name__=~"(sonarr|radarr|lidarr|prowlarr|bazarr)_scrape_requests_total",job=~"$application",code!~"2.."}[$__rate_interval]))'' "{{job}} {{code}}")];
       }
     ];
   in {
     services.grafana.provision.dashboards.settings.providers = [
       {
-        name = "sinnoh-infrastructure";
-        folder = "Sinnoh";
-        options.path = pkgs.linkFarm "sinnoh-dashboards" (map (item: {
+        name = "johto-infrastructure";
+        folder = "Johto";
+        options.path = pkgs.linkFarm "johto-dashboards" (map (item: {
           name = "${item.uid}.json";
           path = pkgs.writeText "${item.uid}.json" (builtins.toJSON item);
-        }) [overview traffic workloads backups]);
+        }) [overview storage workloads backups media]);
       }
     ];
   };
