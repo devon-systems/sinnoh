@@ -59,6 +59,10 @@ _: {
           {
             unit = specification.unit or "short";
             min = 0;
+            max =
+              if (specification.unit or "") == "percentunit"
+              then 1
+              else null;
             noValue = "Unknown";
             color.mode =
               if specification ? thresholds
@@ -97,7 +101,22 @@ _: {
               steps = specification.thresholds;
             };
           };
-        overrides = [];
+        overrides = lib.optional (type == "table") {
+          matcher = {
+            id = "byRegexp";
+            options = "^(?!Value$).*";
+          };
+          properties = [
+            {
+              id = "unit";
+              value = "none";
+            }
+            {
+              id = "mappings";
+              value = [];
+            }
+          ];
+        };
       };
       options =
         if type == "stat"
@@ -207,7 +226,7 @@ _: {
       }
       {
         title = "Filesystem capacity used";
-        targets = [(target ''1 - node_filesystem_avail_bytes{${node},fstype!~"tmpfs|devtmpfs|overlay|squashfs",mountpoint!~"/var/lib/kubelet/.*"} / node_filesystem_size_bytes{${node},fstype!~"tmpfs|devtmpfs|overlay|squashfs",mountpoint!~"/var/lib/kubelet/.*"}'' "{{instance}} {{mountpoint}}")];
+        targets = [(target ''1 - node_filesystem_avail_bytes{${node},fstype=~"btrfs|ext4|xfs|vfat|zfs",mountpoint!~"/var/lib/kubelet/.*|/nix/store"} / node_filesystem_size_bytes{${node},fstype=~"btrfs|ext4|xfs|vfat|zfs",mountpoint!~"/var/lib/kubelet/.*|/nix/store"}'' "{{instance}} {{mountpoint}}")];
         unit = "percentunit";
       }
       {
@@ -425,16 +444,28 @@ _: {
           {
             title = "Flux readiness";
             type = "table";
+            transformations = [
+              {
+                id = "filterFieldsByName";
+                options.include.names = ["customresource_kind" "exported_namespace" "name" "ready"];
+              }
+            ];
             unit = "short";
             targets = [(target ''gotk_resource_info{job="kube-state-metrics",exported_namespace=~"$namespace"}'' "{{customresource_kind}} {{name}} {{controller}}")];
             description = "Flux panels follow namespace only. Readiness and suspension come from resource state; missing state remains Unknown.";
           }
 
           {
-            title = "Flux suspended resources";
+            title = "Flux suspension";
             type = "table";
+            transformations = [
+              {
+                id = "filterFieldsByName";
+                options.include.names = ["customresource_kind" "exported_namespace" "name" "suspended"];
+              }
+            ];
             unit = "short";
-            targets = [(target ''gotk_resource_info{job="kube-state-metrics",exported_namespace=~"$namespace",suspended="true"}'' "{{customresource_kind}} {{name}} {{controller}}")];
+            targets = [(target ''gotk_resource_info{job="kube-state-metrics",exported_namespace=~"$namespace"}'' "{{customresource_kind}} {{name}} {{controller}}")];
             description = "Flux panels follow namespace only. Readiness and suspension come from resource state; missing state remains Unknown.";
           }
 
@@ -763,9 +794,23 @@ _: {
         thresholds = backupAge;
       }
     ];
-    storage = dashboard "johto-storage" "Storage and disks" [nodeVariable (variable "disk" ''label_values(node_disk_info{${node}}, device)'') (variable "mountpoint" ''label_values(node_filesystem_size_bytes{${node},mountpoint!~"/var/lib/kubelet/.*"}, mountpoint)'')] [
+    storage = dashboard "johto-storage" "Storage and disks" [nodeVariable (variable "disk" ''label_values(node_disk_info{${node}}, device)'') (variable "mountpoint" ''label_values(node_filesystem_size_bytes{${node},mountpoint!~"/var/lib/kubelet/.*|/nix/store"}, mountpoint)'')] [
       {
         title = "Data and Media used capacity";
+        thresholds = [
+          {
+            color = "green";
+            value = null;
+          }
+          {
+            color = "orange";
+            value = 0.8;
+          }
+          {
+            color = "red";
+            value = 0.9;
+          }
+        ];
         type = "stat";
         unit = "percentunit";
         targets = [(target ''1 - max by (instance,mountpoint) (node_filesystem_avail_bytes{${node},mountpoint=~"/mnt/(Data|Media)"}) / max by (instance,mountpoint) (node_filesystem_size_bytes{${node},mountpoint=~"/mnt/(Data|Media)"})'' "{{instance}} {{mountpoint}}")];
@@ -776,14 +821,14 @@ _: {
         title = "Filesystem available bytes";
         type = "timeseries";
         unit = "bytes";
-        targets = [(target ''max by (instance,mountpoint) (node_filesystem_avail_bytes{${node},mountpoint=~"$mountpoint",fstype!~"tmpfs|devtmpfs|overlay|squashfs",mountpoint!~"/var/lib/kubelet/.*"})'' "{{instance}} {{mountpoint}}")];
+        targets = [(target ''max by (instance,mountpoint) (node_filesystem_avail_bytes{${node},mountpoint=~"$mountpoint",fstype=~"btrfs|ext4|xfs|vfat|zfs",mountpoint!~"/var/lib/kubelet/.*|/nix/store"})'' "{{instance}} {{mountpoint}}")];
       }
 
       {
         title = "Filesystem capacity";
         type = "timeseries";
         unit = "bytes";
-        targets = [(target ''max by (instance,mountpoint) (node_filesystem_size_bytes{${node},mountpoint=~"$mountpoint",fstype!~"tmpfs|devtmpfs|overlay|squashfs",mountpoint!~"/var/lib/kubelet/.*"})'' "{{instance}} {{mountpoint}}")];
+        targets = [(target ''max by (instance,mountpoint) (node_filesystem_size_bytes{${node},mountpoint=~"$mountpoint",fstype=~"btrfs|ext4|xfs|vfat|zfs",mountpoint!~"/var/lib/kubelet/.*|/nix/store"})'' "{{instance}} {{mountpoint}}")];
         description = "Filesystem capacity is counted once per mountpoint, never summed across physical disks. Disk filters apply to physical disk panels only.";
       }
 
@@ -900,7 +945,7 @@ _: {
         title = "NFS server activity";
         type = "timeseries";
         unit = "ops";
-        targets = [(target ''rate(node_nfsd_requests_total{${node}}[$__rate_interval])'' "{{instance}} {{method}}")];
+        targets = [(target ''sum by(instance,method) (rate(node_nfsd_requests_total{${node}}[$__rate_interval]))'' "{{instance}} {{method}}")];
       }
 
       {
@@ -927,7 +972,13 @@ _: {
 
       {
         title = "Health issues";
-        type = "timeseries";
+        type = "table";
+        transformations = [
+          {
+            id = "filterFieldsByName";
+            options.include.names = ["job" "message" "Value"];
+          }
+        ];
         unit = "short";
         targets = [(target ''{__name__=~"(sonarr|radarr|lidarr|prowlarr|bazarr)_system_health_issues",job=~"$application"}'' "{{job}} {{message}}")];
       }
@@ -981,7 +1032,7 @@ _: {
         title = "Indexer response times";
         type = "timeseries";
         unit = "ms";
-        targets = [(target ''{__name__=~"prowlarr_indexer_average_response_time_ms",job=~"$application"}'' "{{job}} {{__name__}} {{indexer}} {{language}}")];
+        targets = [(target ''{__name__=~"prowlarr_indexer_average_response_time_ms",job=~"$application"}'' "{{indexer}}")];
       }
 
       {

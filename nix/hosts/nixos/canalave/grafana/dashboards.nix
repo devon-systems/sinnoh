@@ -60,6 +60,10 @@ _: {
           {
             unit = specification.unit or "short";
             min = 0;
+            max =
+              if (specification.unit or "") == "percentunit"
+              then 1
+              else null;
             noValue = "Unknown";
             color.mode =
               if specification ? thresholds
@@ -98,7 +102,22 @@ _: {
               steps = specification.thresholds;
             };
           };
-        overrides = [];
+        overrides = lib.optional (type == "table") {
+          matcher = {
+            id = "byRegexp";
+            options = "^(?!Value$).*";
+          };
+          properties = [
+            {
+              id = "unit";
+              value = "none";
+            }
+            {
+              id = "mappings";
+              value = [];
+            }
+          ];
+        };
       };
       options =
         if type == "stat"
