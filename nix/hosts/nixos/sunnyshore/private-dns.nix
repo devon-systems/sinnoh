@@ -16,6 +16,7 @@
         "  hosts {"
         "    10.254.1.6 fallarbor.hoenn"
         "    10.254.1.5 fortree.hoenn"
+        "    10.254.1.9 lilycove.hoenn"
         "    10.254.1.2 mauville.hoenn"
         "    10.254.1.7 pacifidlog.hoenn"
         "    10.254.1.8 petalburg.hoenn"

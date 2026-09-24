@@ -39,6 +39,11 @@
       address = "10.254.1.8";
       publicKey = "sodFLJVrTVsifP5ltziHkQrWDwEj+3Cvj6csZbWtgEE=";
     };
+
+    lilycove = {
+      address = "10.254.1.9";
+      publicKey = "0FG8r6ua2z+o3etlbtmqql8dOu9T48Bx/PzBmSgv+kA=";
+    };
   };
   hoennClients = lib.removeAttrs hoennNodes ["sunnyshore"];
 
