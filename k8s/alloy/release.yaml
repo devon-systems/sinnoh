@@ -84,7 +84,19 @@ spec:
             targets         = discovery.relabel.slingshot.output
             job_name        = "slingshot"
             scrape_interval = "30s"
-            forward_to      = [prometheus.remote_write.sinnoh.receiver]
+            forward_to      = [prometheus.relabel.slingshot.receiver]
+          }
+
+          prometheus.relabel "slingshot" {
+            forward_to = [prometheus.remote_write.sinnoh.receiver]
+
+            // The deployed DDSketch summaries collapse low percentiles.
+            // Keep their sum/count counters for means; use Traefik histograms for percentiles.
+            rule {
+              source_labels = ["quantile"]
+              regex         = ".+"
+              action        = "drop"
+            }
           }
 
           discovery.kubernetes "nodes" {
@@ -200,6 +212,54 @@ spec:
               role  = "pod"
               label = "app.kubernetes.io/name=traefik"
             }
+          }
+
+          discovery.relabel "traefik_metrics" {
+            targets = discovery.kubernetes.traefik.targets
+
+            rule {
+              source_labels = ["__meta_kubernetes_pod_container_port_name"]
+              regex         = "metrics"
+              action        = "keep"
+            }
+
+            rule {
+              source_labels = ["__meta_kubernetes_pod_phase"]
+              regex         = "Running"
+              action        = "keep"
+            }
+
+            rule {
+              source_labels = ["__meta_kubernetes_namespace"]
+              target_label  = "namespace"
+            }
+
+            rule {
+              source_labels = ["__meta_kubernetes_pod_name"]
+              target_label  = "pod"
+            }
+
+            rule {
+              source_labels = ["__meta_kubernetes_pod_name"]
+              target_label  = "instance"
+            }
+
+            rule {
+              source_labels = ["__meta_kubernetes_pod_node_name"]
+              target_label  = "node"
+            }
+
+            rule {
+              target_label = "cluster"
+              replacement  = "sinnoh"
+            }
+          }
+
+          prometheus.scrape "traefik" {
+            targets         = discovery.relabel.traefik_metrics.output
+            job_name        = "traefik"
+            scrape_interval = "30s"
+            forward_to      = [prometheus.remote_write.sinnoh.receiver]
           }
 
           discovery.relabel "traefik" {

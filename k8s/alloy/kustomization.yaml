@@ -3,5 +3,5 @@ kind: Kustomization
 namespace: flux-system
 resources:
   - repository.yaml
-  - release.yaml
+  - release.yaml # Application, ingress, and Kubernetes metrics collection.
   - kube-state-metrics.yaml

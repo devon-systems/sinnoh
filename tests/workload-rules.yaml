@@ -1,6 +1,7 @@
 rule_files:
   - workload-rules.json
 evaluation_interval: 30s
+fuzzy_compare: true
 tests:
   - interval: 30s
     input_series:
@@ -63,3 +64,78 @@ tests:
       - expr: 'kube_pod_container_resource_limits{namespace="absent"} or on(namespace,pod,container) (0 * kube_pod_container_info{namespace="absent"} - 1)'
         eval_time: 5m
         exp_samples: []
+  - name: Slingshot latency aggregation and refresh failures
+    interval: 30s
+    input_series:
+      - series: 'traefik_service_request_duration_seconds_bucket{job="traefik",instance="proxy-a",service="slingshot-slingshot-http@kubernetes",code="200",le="0.1"}'
+        values: "0+15x6"
+      - series: 'traefik_service_request_duration_seconds_bucket{job="traefik",instance="proxy-a",service="slingshot-slingshot-http@kubernetes",code="200",le="0.25"}'
+        values: "0+30x6"
+      - series: 'traefik_service_request_duration_seconds_bucket{job="traefik",instance="proxy-a",service="slingshot-slingshot-http@kubernetes",code="200",le="0.5"}'
+        values: "0+30x6"
+      - series: 'traefik_service_request_duration_seconds_bucket{job="traefik",instance="proxy-a",service="slingshot-slingshot-http@kubernetes",code="200",le="+Inf"}'
+        values: "0+30x6"
+      - series: 'traefik_service_request_duration_seconds_bucket{job="traefik",instance="proxy-b",service="slingshot-slingshot-http@kubernetes",code="200",le="0.1"}'
+        values: "0+45x6"
+      - series: 'traefik_service_request_duration_seconds_bucket{job="traefik",instance="proxy-b",service="slingshot-slingshot-http@kubernetes",code="200",le="0.25"}'
+        values: "0+120x6"
+      - series: 'traefik_service_request_duration_seconds_bucket{job="traefik",instance="proxy-b",service="slingshot-slingshot-http@kubernetes",code="200",le="0.5"}'
+        values: "0+270x6"
+      - series: 'traefik_service_request_duration_seconds_bucket{job="traefik",instance="proxy-b",service="slingshot-slingshot-http@kubernetes",code="200",le="+Inf"}'
+        values: "0+300x6"
+      # Unequal fetch volumes and a reset distinguish weighted counter rates
+      # from averaging per-pod latency or using raw cumulative sums.
+      - series: 'slingshot_fetch_record_sum{job="slingshot",instance="app-a",success="true"}'
+        values: "0 30 60 0 30 60 90"
+      - series: 'slingshot_fetch_record_count{job="slingshot",instance="app-a",success="true"}'
+        values: "0 30 60 0 30 60 90"
+      - series: 'slingshot_fetch_record_sum{job="slingshot",instance="app-b",success="true"}'
+        values: "0+270x6"
+      - series: 'slingshot_fetch_record_count{job="slingshot",instance="app-b",success="true"}'
+        values: "0+300x6"
+      - series: 'identity_did_refresh{job="slingshot",success="false",reason="bad doc"}'
+        values: "0+3000x6"
+      - series: 'identity_did_refresh{job="slingshot",success="false",reason="wrong did"}'
+        values: "0+30x6"
+      - series: 'identity_did_refresh{job="slingshot",success="true"}'
+        values: "0+0x6"
+      # Router counters include failures before a backend request is possible.
+      - series: 'traefik_router_requests_total{job="traefik",router="websecure-slingshot-slingshot-slingshot-aly-town@kubernetes",code="503"}'
+        values: "0+30x6"
+      - series: 'traefik_router_requests_total{job="traefik",router="websecure-slingshot-slingshot-slingshot-aly-town@kubernetes",code="400"}'
+        values: "0+60x6"
+      - series: 'traefik_router_requests_total{job="traefik",router="websecure-skytrace-skytrace-skytrace-aly-town@kubernetes",code="503"}'
+        values: "0+3000x6"
+    promql_expr_test:
+      - expr: 'histogram_quantile(0.5, sum by (le) (rate(traefik_service_request_duration_seconds_bucket{job="traefik",service="slingshot-slingshot-http@kubernetes",code="200"}[2m])))'
+        eval_time: 2m30s
+        exp_samples:
+          - labels: "{}"
+            value: 0.275
+      - expr: 'sum(rate(slingshot_fetch_record_sum{job="slingshot",success="true"}[2m])) / sum(rate(slingshot_fetch_record_count{job="slingshot",success="true"}[2m]))'
+        eval_time: 2m30s
+        exp_samples:
+          - labels: "{}"
+            value: 0.90625
+      - expr: 'histogram_quantile(0.5, sum by (le) (rate(traefik_service_request_duration_seconds_bucket{job="absent"}[2m])))'
+        eval_time: 2m30s
+        exp_samples: []
+      - expr: 'sum(rate(slingshot_fetch_record_sum{job="absent",success="true"}[2m])) / sum(rate(slingshot_fetch_record_count{job="absent",success="true"}[2m]))'
+        eval_time: 2m30s
+        exp_samples: []
+      - expr: 'sum by (success, reason) (rate(identity_did_refresh{job="slingshot"}[2m]))'
+        eval_time: 2m30s
+        exp_samples:
+          - labels: '{success="false",reason="bad doc"}'
+            value: 100
+          - labels: '{success="false",reason="wrong did"}'
+            value: 1
+          - labels: '{success="true"}'
+            value: 0
+      - expr: 'sum by (code) (rate(traefik_router_requests_total{job="traefik",router=~"(web-|websecure-)?slingshot-slingshot-slingshot-aly-town@kubernetes",code=~"[45].."}[2m]))'
+        eval_time: 2m30s
+        exp_samples:
+          - labels: '{code="400"}'
+            value: 2
+          - labels: '{code="503"}'
+            value: 1

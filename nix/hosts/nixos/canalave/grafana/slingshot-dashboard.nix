@@ -16,6 +16,10 @@ _: {
     fetchRate = lib.concatStringsSep " + " (map
       (kind: ''(sum(rate(slingshot_fetch_${kind}_count{job="slingshot"}[$__rate_interval])) or vector(0))'')
       ["record" "handle" "did_doc"]);
+    latencyBuckets = ''traefik_service_request_duration_seconds_bucket{job="traefik",service="slingshot-slingshot-http@kubernetes",code="200"}'';
+    fetchMean = kind: ''sum(rate(slingshot_fetch_${kind}_sum{job="slingshot",success="true"}[$__rate_interval])) / sum(rate(slingshot_fetch_${kind}_count{job="slingshot",success="true"}[$__rate_interval]))'';
+    resources = ''job="kube-state-metrics",namespace="slingshot",container="slingshot"'';
+    containers = ''job="cadvisor",namespace="slingshot",container="slingshot",image!=""'';
 
     target = expr: legendFormat: {
       inherit expr legendFormat;
@@ -94,7 +98,7 @@ _: {
         }
       ];
       title = "Slingshot";
-      description = "Slingshot application metrics collected every 30 seconds. Request panels exclude root health probes. Exported latency percentiles cover a rolling hour; counters reset when the process restarts.";
+      description = "Application and ingress metrics collected every 30 seconds. Application request panels exclude root health probes. Latency percentiles use Traefik histograms; upstream fetch latency uses counter-based means. Refresh attempts do not measure queue depth.";
       tags = ["sinnoh" "slingshot"];
       schemaVersion = 39;
       version = 1;
@@ -114,7 +118,10 @@ _: {
           x = 0;
           y = 0;
           unit = "bool";
-          targets = [(target ''min(up{job="slingshot"})'' "Reachable")];
+          targets = [
+            (target ''min(up{job="slingshot"})'' "Application")
+            (target ''min(up{job="traefik"})'' "Ingress")
+          ];
         }
         {
           id = 2;
@@ -128,8 +135,8 @@ _: {
         }
         {
           id = 3;
-          title = "API server error rate";
-          description = "Share of completed API requests with an HTTP 5xx response. Client errors are shown separately below.";
+          title = "API HTTP 5xx rate";
+          description = "Share of completed API requests with an HTTP 5xx response. Slingshot also maps some backend failures to HTTP 400, so this does not capture every backend failure.";
           type = "stat";
           x = 12;
           y = 0;
@@ -158,7 +165,7 @@ _: {
         {
           id = 6;
           title = "HTTP response status";
-          description = "Response rates by HTTP status, including client errors and server errors.";
+          description = "Response rates by HTTP status. HTTP 400 includes invalid input and some backend failures; status alone cannot distinguish them.";
           x = 12;
           y = 4;
           unit = "reqps";
@@ -166,12 +173,16 @@ _: {
         }
         {
           id = 7;
-          title = "Successful API request latency";
-          description = "Exporter-provided p50, p90, and p99 in seconds over its rolling one-hour window. Each pod is shown separately because summary percentiles cannot be combined.";
+          title = "Successful ingress service latency";
+          description = "Estimated p50, p95, and p99 from Traefik service histograms over the selected rate interval. Includes requests routed to Slingshot with HTTP 200, including public root requests; excludes direct Kubernetes probes. Measures proxy-to-service duration, without Cloudflare or client network time. Histograms do not separate API endpoints.";
           x = 0;
           y = 12;
           unit = "s";
-          targets = [(target ''server_request{job="slingshot",endpoint!="GET /",status="200 OK",quantile=~"0.5|0.9|0.99"}'' "{{endpoint}} · q{{quantile}} · {{instance}}")];
+          targets = [
+            (target "histogram_quantile(0.5, sum by (le) (rate(${latencyBuckets}[$__rate_interval])))" "p50")
+            (target "histogram_quantile(0.95, sum by (le) (rate(${latencyBuckets}[$__rate_interval])))" "p95")
+            (target "histogram_quantile(0.99, sum by (le) (rate(${latencyBuckets}[$__rate_interval])))" "p99")
+          ];
         }
         {
           id = 8;
@@ -201,15 +212,15 @@ _: {
         }
         {
           id = 10;
-          title = "Successful upstream fetch latency, p90";
-          description = "Exporter-provided 90th percentile over its rolling one-hour window, shown separately for each pod.";
+          title = "Successful upstream fetch mean latency";
+          description = "Request-weighted mean duration from sum/count counter rates. The deployed application summary percentiles are unreliable. No successful fetches produce no usable mean.";
           x = 12;
           y = 20;
           unit = "s";
           targets = [
-            (target ''slingshot_fetch_record{job="slingshot",success="true",quantile="0.9"}'' "Records · {{instance}}")
-            (target ''slingshot_fetch_handle{job="slingshot",success="true",quantile="0.9"}'' "Handles · {{instance}}")
-            (target ''slingshot_fetch_did_doc{job="slingshot",success="true",quantile="0.9"}'' "DID documents · {{instance}}")
+            (target (fetchMean "record") "Records")
+            (target (fetchMean "handle") "Handles")
+            (target (fetchMean "did_doc") "DID documents")
           ];
         }
         {
@@ -249,14 +260,80 @@ _: {
         {
           id = 14;
           title = "Identity refresh outcomes";
-          description = "Background refresh completion rates. The exporter does not expose current refresh queue depth.";
+          description = "Background refresh attempt rates. Failed DID attempts can repeatedly process a stuck queue head, so these are not completed-job counts. The exporter does not expose queue depth.";
           x = 12;
           y = 36;
           unit = "ops";
           targets = [
-            (target ''sum by (success) (rate(identity_handle_refresh{job="slingshot"}[$__rate_interval]))'' "Handles · success={{success}}")
-            (target ''sum by (success) (rate(identity_did_refresh{job="slingshot"}[$__rate_interval]))'' "DID documents · success={{success}}")
+            (target ''sum by (success, reason) (rate(identity_handle_refresh{job="slingshot"}[$__rate_interval]))'' "Handles · success={{success}} · {{reason}}")
+            (target ''sum by (success, reason) (rate(identity_did_refresh{job="slingshot"}[$__rate_interval]))'' "DID documents · success={{success}} · {{reason}}")
           ];
+        }
+        {
+          id = 15;
+          title = "Identity refresh scheduling attempts";
+          description = "Attempts to schedule a refresh, counted before queue deduplication. Repeated attempts for the same identity are included. Do not subtract outcomes from these rates to infer queue depth.";
+          x = 0;
+          y = 44;
+          unit = "ops";
+          targets = [
+            (target ''sum by (reason) (rate(identity_handle_refresh_queued{job="slingshot"}[$__rate_interval]))'' "Handles · {{reason}}")
+            (target ''sum by (reason) (rate(identity_did_refresh_queued{job="slingshot"}[$__rate_interval]))'' "DID documents · {{reason}}")
+          ];
+        }
+        {
+          id = 16;
+          title = "Ingress HTTP failures";
+          description = "HTTP 4xx/5xx responses from Traefik for Slingshot, including gateway failures that never reach the application counters.";
+          x = 12;
+          y = 44;
+          unit = "reqps";
+          targets = [(target ''sum by (code) (rate(traefik_router_requests_total{job="traefik",router=~"(web-|websecure-)?slingshot-slingshot-slingshot-aly-town@kubernetes",code=~"[45].."}[$__rate_interval]))'' "HTTP {{code}}")];
+        }
+        {
+          id = 17;
+          title = "Slingshot memory and allocation";
+          description = "Container working set and RSS alongside the Kubernetes memory request and limit. A larger limit adds headroom but does not fix unbounded application queues.";
+          x = 0;
+          y = 52;
+          unit = "bytes";
+          targets = [
+            (target ''max by (pod) (container_memory_working_set_bytes{${containers}})'' "Working set · {{pod}}")
+            (target ''max by (pod) (container_memory_rss{${containers}})'' "RSS · {{pod}}")
+            (target ''max by (pod) (kube_pod_container_resource_requests{${resources},resource="memory"})'' "Request · {{pod}}")
+            (target ''max by (pod) (kube_pod_container_resource_limits{${resources},resource="memory"})'' "Limit · {{pod}}")
+          ];
+        }
+        {
+          id = 18;
+          title = "Slingshot CPU and allocation";
+          description = "CPU usage in cores alongside the Kubernetes CPU request and limit.";
+          x = 12;
+          y = 52;
+          unit = "cores";
+          targets = [
+            (target ''sum by (pod) (rate(container_cpu_usage_seconds_total{${containers}}[$__rate_interval]))'' "Usage · {{pod}}")
+            (target ''max by (pod) (kube_pod_container_resource_requests{${resources},resource="cpu"})'' "Request · {{pod}}")
+            (target ''max by (pod) (kube_pod_container_resource_limits{${resources},resource="cpu"})'' "Limit · {{pod}}")
+          ];
+        }
+        {
+          id = 19;
+          title = "Container restarts in the last hour";
+          description = "Kubernetes restart counter increases per pod over a rolling hour. Pod replacement starts a new counter; deleted pods disappear from current views.";
+          x = 0;
+          y = 60;
+          unit = "short";
+          targets = [(target ''sum by (pod) (increase(kube_pod_container_status_restarts_total{${resources}}[1h]))'' "{{pod}}")];
+        }
+        {
+          id = 20;
+          title = "Last container termination reason";
+          description = "A value of 1 marks the last termination reason reported by Kubernetes. This persists until a later termination or pod replacement; it is not a count of new failures. Missing data means no recorded termination.";
+          x = 12;
+          y = 60;
+          unit = "bool";
+          targets = [(target ''max by (pod, reason) (kube_pod_container_status_last_terminated_reason{${resources}}) == 1'' "{{pod}} · {{reason}}")];
         }
       ];
     };

@@ -2,7 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: slingshot
 resources:
-  - workload.yaml
+  - workload.yaml # Canalave placement and Slingshot resource reservations.
 replicas:
   - name: slingshot
     count: 1

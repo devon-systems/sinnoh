@@ -1,2 +1,2 @@
 resources:
-  - default-tls.yaml
+  - default-tls.yaml # TLS certificate and Helm ingress/metrics configuration.
