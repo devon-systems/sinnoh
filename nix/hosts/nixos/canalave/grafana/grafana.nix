@@ -57,7 +57,10 @@ _: {
               type = "prometheus";
               access = "proxy";
               url = "http://127.0.0.1:3020";
-              jsonData.timeInterval = "30s";
+              jsonData = {
+                timeInterval = "30s";
+                alertmanagerUid = "sinnoh-alertmanager";
+              };
             }
             {
               name = "Sinnoh Loki";

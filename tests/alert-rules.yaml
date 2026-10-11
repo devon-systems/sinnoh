@@ -1,0 +1,223 @@
+rule_files:
+  - workload-rules.json
+evaluation_interval: 30s
+fuzzy_compare: true
+tests:
+  - name: Node failures respect grace periods
+    interval: 30s
+    input_series:
+      - series: up{job="node",instance="canalave"}
+        values: 1 0+0x40
+      - series: up{job="node",instance="sunnyshore"}
+        values: 1+0x41
+      - series: node_memory_MemAvailable_bytes{job="node",instance="canalave"}
+        values: 8+0x41
+      - series: node_memory_MemTotal_bytes{job="node",instance="canalave"}
+        values: 100+0x41
+    promql_expr_test:
+      - expr: sum by (instance) (ALERTS{alertname="NodeDown",alertstate="firing"})
+        eval_time: 2m
+        exp_samples: []
+      - expr: sum by (instance) (ALERTS{alertname="NodeDown",alertstate="firing"})
+        eval_time: 2m30s
+        exp_samples:
+          - labels: '{instance="canalave"}'
+            value: 1
+      - expr: sum by (instance) (ALERTS{alertname="NodeMemoryLow",alertstate="firing"})
+        eval_time: 14m30s
+        exp_samples: []
+      - expr: sum by (instance) (ALERTS{alertname="NodeMemoryLow",alertstate="firing"})
+        eval_time: 15m
+        exp_samples:
+          - labels: '{instance="canalave"}'
+            value: 1
+  - name: Deployment availability ignores scale-to-zero and distinguishes partial replicas
+    interval: 1m
+    input_series:
+      - series: kube_deployment_spec_replicas{job="kube-state-metrics",namespace="slingshot",deployment="slingshot"}
+        values: 1+0x20
+      - series: kube_deployment_status_replicas_available{job="kube-state-metrics",namespace="slingshot",deployment="slingshot"}
+        values: 1 1 0+0x18
+      - series: kube_deployment_spec_replicas{job="kube-state-metrics",namespace="skytrace",deployment="skytrace"}
+        values: 2+0x20
+      - series: kube_deployment_status_replicas_available{job="kube-state-metrics",namespace="skytrace",deployment="skytrace"}
+        values: 1+0x20
+      - series: kube_deployment_spec_replicas{job="kube-state-metrics",namespace="tools",deployment="paused"}
+        values: 0+0x20
+      - series: kube_deployment_status_replicas_available{job="kube-state-metrics",namespace="tools",deployment="paused"}
+        values: 0+0x20
+    promql_expr_test:
+      - expr: sum by (namespace, deployment) (ALERTS{alertname="KubernetesDeploymentUnavailable",alertstate="firing"})
+        eval_time: 6m30s
+        exp_samples: []
+      - expr: sum by (namespace, deployment) (ALERTS{alertname="KubernetesDeploymentUnavailable",alertstate="firing"})
+        eval_time: 7m
+        exp_samples:
+          - labels: '{namespace="slingshot",deployment="slingshot"}'
+            value: 1
+      - expr: sum by (namespace, deployment) (ALERTS{alertname="KubernetesDeploymentReplicasMissing",alertstate="firing"})
+        eval_time: 14m30s
+        exp_samples: []
+      - expr: sum by (namespace, deployment) (ALERTS{alertname="KubernetesDeploymentReplicasMissing",alertstate="firing"})
+        eval_time: 18m
+        exp_samples:
+          - labels: '{namespace="slingshot",deployment="slingshot"}'
+            value: 1
+          - labels: '{namespace="skytrace",deployment="skytrace"}'
+            value: 1
+  - name: OOM alerts require a recent restart and expire despite a retained termination reason
+    interval: 1m
+    input_series:
+      - series: kube_pod_container_status_restarts_total{job="kube-state-metrics",namespace="slingshot",pod="new-oom",container="slingshot"}
+        values: 0 0 1+0x18
+      - series: kube_pod_container_status_last_terminated_reason{job="kube-state-metrics",namespace="slingshot",pod="new-oom",container="slingshot",reason="OOMKilled"}
+        values: 0 0 1+0x18
+      - series: kube_pod_container_status_restarts_total{job="kube-state-metrics",namespace="slingshot",pod="old-oom",container="slingshot"}
+        values: 5+0x20
+      - series: kube_pod_container_status_last_terminated_reason{job="kube-state-metrics",namespace="slingshot",pod="old-oom",container="slingshot",reason="OOMKilled"}
+        values: 1+0x20
+      - series: kube_pod_container_status_restarts_total{job="kube-state-metrics",namespace="slingshot",pod="counter-reset",container="slingshot"}
+        values: 5 5 0+0x18
+      - series: kube_pod_container_status_last_terminated_reason{job="kube-state-metrics",namespace="slingshot",pod="counter-reset",container="slingshot",reason="OOMKilled"}
+        values: 1+0x20
+    promql_expr_test:
+      - expr: sum by (pod) (ALERTS{alertname="KubernetesContainerOOMKilled",alertstate="firing"})
+        eval_time: 1m
+        exp_samples: []
+      - expr: sum by (pod) (ALERTS{alertname="KubernetesContainerOOMKilled",alertstate="firing"})
+        eval_time: 3m
+        exp_samples:
+          - labels: '{pod="new-oom"}'
+            value: 1
+      - expr: sum by (pod) (ALERTS{alertname="KubernetesContainerOOMKilled",alertstate="firing"})
+        eval_time: 14m
+        exp_samples: []
+  - name: Repeated restarts must persist before notifying
+    interval: 1m
+    input_series:
+      - series: kube_pod_container_status_restarts_total{job="kube-state-metrics",namespace="web",pod="crashing",container="app"}
+        values: 0+1x20
+    promql_expr_test:
+      - expr: sum by (pod) (ALERTS{alertname="KubernetesContainerRestarting",alertstate="firing"})
+        eval_time: 7m30s
+        exp_samples: []
+      - expr: sum by (pod) (ALERTS{alertname="KubernetesContainerRestarting",alertstate="firing"})
+        eval_time: 8m
+        exp_samples:
+          - labels: '{pod="crashing"}'
+            value: 1
+  - name: Memory alerts ignore missing or zero limits
+    interval: 1m
+    input_series:
+      - series: container_memory_working_set_bytes{job="cadvisor",namespace="web",pod="hot",container="app",image="app"}
+        values: 95+0x20
+      - series: kube_pod_container_resource_limits{job="kube-state-metrics",namespace="web",pod="hot",container="app",resource="memory"}
+        values: 100+0x20
+      - series: container_memory_working_set_bytes{job="cadvisor",namespace="web",pod="cool",container="app",image="app"}
+        values: 80+0x20
+      - series: kube_pod_container_resource_limits{job="kube-state-metrics",namespace="web",pod="cool",container="app",resource="memory"}
+        values: 100+0x20
+      - series: container_memory_working_set_bytes{job="cadvisor",namespace="web",pod="unlimited",container="app",image="app"}
+        values: 95+0x20
+      - series: kube_pod_container_resource_limits{job="kube-state-metrics",namespace="web",pod="unlimited",container="app",resource="memory"}
+        values: 0+0x20
+      - series: container_memory_working_set_bytes{job="cadvisor",namespace="web",pod="unknown",container="app",image="app"}
+        values: 95+0x20
+    promql_expr_test:
+      - expr: sum by (pod) (ALERTS{alertname="KubernetesContainerMemoryNearLimit",alertstate="firing"})
+        eval_time: 14m30s
+        exp_samples: []
+      - expr: sum by (pod) (ALERTS{alertname="KubernetesContainerMemoryNearLimit",alertstate="firing"})
+        eval_time: 15m
+        exp_samples:
+          - labels: '{pod="hot"}'
+            value: 1
+  - name: Public error alerts include gateway failures and ignore HTTP 400
+    interval: 1m
+    input_series:
+      - series: traefik_router_requests_total{job="traefik",service="slingshot-slingshot-http@kubernetes",code="503"}
+        values: 0+12x20
+      - series: traefik_router_requests_total{job="traefik",service="slingshot-slingshot-http@kubernetes",code="200"}
+        values: 0+108x20
+      - series: traefik_router_requests_total{job="traefik",service="skytrace-skytrace-http@kubernetes",code="400"}
+        values: 0+60x20
+      - series: traefik_router_requests_total{job="traefik",service="skytrace-skytrace-http@kubernetes",code="200"}
+        values: 0+60x20
+    promql_expr_test:
+      - expr: sum by (namespace) (ALERTS{alertname="PublicServiceHTTPErrorRateHigh",alertstate="firing"})
+        eval_time: 10m30s
+        exp_samples: []
+      - expr: sum by (namespace) (ALERTS{alertname="PublicServiceHTTPErrorRateHigh",alertstate="firing"})
+        eval_time: 12m
+        exp_samples:
+          - labels: '{namespace="slingshot"}'
+            value: 1
+  - name: Low traffic does not turn isolated HTTP failures into an error-rate alert
+    interval: 1m
+    input_series:
+      - series: traefik_router_requests_total{job="traefik",service="skytrace-skytrace-http@kubernetes",code="503"}
+        values: 0+1x20
+    promql_expr_test:
+      - expr: sum by (namespace) (ALERTS{alertname="PublicServiceHTTPErrorRateHigh",alertstate="firing"})
+        eval_time: 20m
+        exp_samples: []
+  - name: Latency alerts use histograms and wait for sustained latency
+    interval: 1m
+    input_series:
+      - series: traefik_service_request_duration_seconds_bucket{job="traefik",service="slingshot-slingshot-http@kubernetes",code="200",le="1"}
+        values: 0+0x20
+      - series: traefik_service_request_duration_seconds_bucket{job="traefik",service="slingshot-slingshot-http@kubernetes",code="200",le="2"}
+        values: 0+100x20
+      - series: traefik_service_request_duration_seconds_bucket{job="traefik",service="slingshot-slingshot-http@kubernetes",code="200",le="+Inf"}
+        values: 0+100x20
+      - series: traefik_service_request_duration_seconds_count{job="traefik",service="slingshot-slingshot-http@kubernetes",code="200"}
+        values: 0+100x20
+      - series: traefik_service_request_duration_seconds_bucket{job="traefik",service="skytrace-skytrace-http@kubernetes",code="200",le="0.1"}
+        values: 0+100x20
+      - series: traefik_service_request_duration_seconds_bucket{job="traefik",service="skytrace-skytrace-http@kubernetes",code="200",le="1"}
+        values: 0+100x20
+      - series: traefik_service_request_duration_seconds_bucket{job="traefik",service="skytrace-skytrace-http@kubernetes",code="200",le="2"}
+        values: 0+100x20
+      - series: traefik_service_request_duration_seconds_bucket{job="traefik",service="skytrace-skytrace-http@kubernetes",code="200",le="+Inf"}
+        values: 0+100x20
+      - series: traefik_service_request_duration_seconds_count{job="traefik",service="skytrace-skytrace-http@kubernetes",code="200"}
+        values: 0+100x20
+    promql_expr_test:
+      - expr: sum by (namespace) (ALERTS{alertname="PublicServiceLatencyHigh",alertstate="firing"})
+        eval_time: 10m30s
+        exp_samples: []
+      - expr: sum by (namespace) (ALERTS{alertname="PublicServiceLatencyHigh",alertstate="firing"})
+        eval_time: 12m
+        exp_samples:
+          - labels: '{namespace="slingshot"}'
+            value: 1
+  - name: Missing telemetry and failed scrapes are detected separately
+    interval: 1m
+    input_series:
+      - series: up{job="cadvisor"}
+        values: 1+0x20
+      - series: up{job="kube-state-metrics"}
+        values: 1+0x20
+      - series: up{job="slingshot"}
+        values: 1+0x20
+      - series: up{job="traefik"}
+        values: 1+0x4 stale _x15
+      - series: up{job="alertmanager",instance="127.0.0.1:3040"}
+        values: 0+0x20
+    promql_expr_test:
+      - expr: sum by (job) (ALERTS{alertname="MetricsTelemetryMissing",alertstate="firing"})
+        eval_time: 10m30s
+        exp_samples: []
+      - expr: sum by (job) (ALERTS{alertname="MetricsTelemetryMissing",alertstate="firing"})
+        eval_time: 11m
+        exp_samples:
+          - labels: '{job="traefik"}'
+            value: 1
+      - expr: sum by (job) (ALERTS{alertname="MetricsScrapeFailed",alertstate="firing"})
+        eval_time: 4m30s
+        exp_samples: []
+      - expr: sum by (job) (ALERTS{alertname="MetricsScrapeFailed",alertstate="firing"})
+        eval_time: 5m
+        exp_samples:
+          - labels: '{job="alertmanager"}'
+            value: 1
