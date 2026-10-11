@@ -4,3 +4,25 @@ resources:
   - namespace.yaml
   - workload.yaml
   - valkey-network-policy.yaml
+patches:
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: tranquil-pds
+        namespace: tranquil-pds
+      spec:
+        template:
+          spec:
+            containers:
+              - name: tranquil-pds
+                securityContext:
+                  runAsNonRoot: true
+                  runAsUser: 65532
+                  runAsGroup: 65532
+                  allowPrivilegeEscalation: false
+                  capabilities:
+                    drop:
+                      - ALL
+                  seccompProfile:
+                    type: RuntimeDefault
