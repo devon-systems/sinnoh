@@ -3,3 +3,12 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - workload.yaml
+patches:
+  - target:
+      kind: Deployment
+      name: morgan
+    patch: |-
+      - op: add
+        path: /spec/template/spec/topologySpreadConstraints/0/matchLabelKeys
+        value:
+          - pod-template-hash

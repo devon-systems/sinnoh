@@ -4,3 +4,12 @@ namespace: snrld
 resources:
   - namespace.yaml
   - workload.yaml
+patches:
+  - target:
+      kind: Deployment
+      name: snrld
+    patch: |-
+      - op: add
+        path: /spec/template/spec/topologySpreadConstraints/0/matchLabelKeys
+        value:
+          - pod-template-hash
