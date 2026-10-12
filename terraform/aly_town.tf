@@ -20,6 +20,17 @@ resource "cloudflare_dns_record" "aly_town_skytrace_a" {
   settings = {}
 }
 
+resource "cloudflare_dns_record" "aly_town_bobbin_a" {
+  zone_id  = local.zones.aly_town
+  name     = "bobbin.aly.town"
+  type     = "A"
+  content  = local.sunnyshore
+  proxied  = true
+  ttl      = 1
+  tags     = []
+  settings = {}
+}
+
 resource "cloudflare_dns_record" "aly_town_slingshot_a" {
   zone_id  = local.zones.aly_town
   name     = "slingshot.aly.town"

@@ -1,0 +1,129 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bobbin
+  namespace: bobbin
+  labels:
+    app: bobbin
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: bobbin
+  template:
+    metadata:
+      labels:
+        app: bobbin
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      terminationGracePeriodSeconds: 40
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      topologySpreadConstraints:
+        - maxSkew: 1
+          minDomains: 2
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          matchLabelKeys:
+            - pod-template-hash
+          labelSelector:
+            matchLabels:
+              app: bobbin
+      initContainers:
+        - name: readiness-tools
+          image: busybox:1.37.0-musl@sha256:5cec3fc171c87218698e85a52af7087de727372aae264a787b8112901a5b0092
+          command: ["/bin/busybox", "cp", "/bin/busybox", "/health/busybox"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 8Mi
+            limits:
+              cpu: 100m
+              memory: 32Mi
+          volumeMounts:
+            - name: readiness-tools
+              mountPath: /health
+      containers:
+        - name: bobbin
+          image: ghcr.io/alyraffauf/bobbin:latest@sha256:d45af020512bfdb94853c31703c8c6b4ef9193b2e313b93c03eabc6fff374b5e
+          env:
+            - name: BOBBIN_BIND
+              value: "0.0.0.0:8090"
+            - name: BOBBIN_HYDRANT_URL
+              value: "https://api.tangled.org"
+            - name: BOBBIN_SLINGSHOT_URL
+              value: "http://slingshot.slingshot.svc.cluster.local"
+            - name: BOBBIN_TRUSTED_PROXIES
+              value: "10.42.0.0/16"
+            - name: BOBBIN_INGEST_PARALLELISM
+              value: "8"
+            - name: BOBBIN_LOG_FORMAT
+              value: "json"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          ports:
+            - name: http
+              containerPort: 8090
+          resources:
+            requests:
+              cpu: 100m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          startupProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 2
+            failureThreshold: 30
+          livenessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 30
+          readinessProbe:
+            # Coverage returns HTTP 200 during replay, so check the JSON body.
+            exec:
+              command:
+                - /health/busybox
+                - sh
+                - -ec
+                - >-
+                  /health/busybox wget -qO- http://127.0.0.1:8090/xrpc/sh.tangled.bobbin.getCoverage
+                  | /health/busybox grep -q '"ready":true'
+            periodSeconds: 5
+            timeoutSeconds: 3
+          volumeMounts:
+            - name: readiness-tools
+              mountPath: /health
+              readOnly: true
+      volumes:
+        - name: readiness-tools
+          emptyDir:
+            sizeLimit: 8Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bobbin
+  namespace: bobbin
+spec:
+  selector:
+    app: bobbin
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

@@ -1,0 +1,63 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: bobbin
+  namespace: bobbin
+spec:
+  secretName: bobbin-tls
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt
+  dnsNames:
+    - bobbin.aly.town
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: bobbin-cors
+  namespace: bobbin
+spec:
+  headers:
+    accessControlAllowOriginList: ["*"]
+    accessControlAllowMethods: [GET, HEAD, POST, OPTIONS]
+    accessControlAllowHeaders: [Content-Type, Authorization, atproto-proxy]
+    accessControlMaxAge: 86400
+    addVaryHeader: true
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: bobbin-rate-limit
+  namespace: bobbin
+spec:
+  rateLimit:
+    average: 300
+    period: 1m
+    burst: 50
+    sourceCriterion:
+      requestHeaderName: CF-Connecting-IP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: bobbin
+  namespace: bobbin
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: bobbin-bobbin-cors@kubernetescrd,bobbin-bobbin-rate-limit@kubernetescrd
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - bobbin.aly.town
+      secretName: bobbin-tls
+  rules:
+    - host: bobbin.aly.town
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: bobbin
+                port:
+                  name: http

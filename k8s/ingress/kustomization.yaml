@@ -12,3 +12,4 @@ resources:
   - snrld.yaml
   - switchyard.yaml
   - tranquil-pds.yaml
+  - bobbin.yaml

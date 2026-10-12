@@ -25,4 +25,5 @@ resources:
   - switchyard.yaml
   - morsels.yaml
   - slingshot.yaml
+  - bobbin.yaml
   - ingress.yaml
