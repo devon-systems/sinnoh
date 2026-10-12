@@ -7,7 +7,10 @@ metadata:
     app: bobbin
 spec:
   strategy:
-    type: Recreate
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   selector:
     matchLabels:
       app: bobbin
