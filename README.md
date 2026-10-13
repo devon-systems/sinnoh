@@ -49,6 +49,14 @@ nix flake check
 
 Run `just` to list maintenance commands.
 
+The Kubernetes recipes match Hoenn and the other cluster repository. Use
+`just check-k8s` for manifest validation, `just reconcile` to reconcile the Flux
+root, `just reconcile <name>` for a workload, and `just flux-status` to inspect
+reconciliation. These Flux commands explicitly target the `sinnoh` context.
+`just kubeconfig <host> <api-address>` fetches a named administrator kubeconfig.
+`just flux-bootstrap <age-key-file> <git-ssh-key-file>` installs SOPS decryption
+and bootstraps the checked-in Flux version.
+
 ## Deployment
 
 `blzrd` deploys `sunnyshore` and `canalave`. For example:
