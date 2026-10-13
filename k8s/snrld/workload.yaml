@@ -27,7 +27,7 @@ spec:
               app: snrld
       containers:
         - name: snrld
-          image: ghcr.io/alyraffauf/snrld:latest@sha256:a69bdef8022a12c7fd52bc8cef1cca791a4b6f47d383c5d9687309425e3a9bfe
+          image: ghcr.io/alyraffauf/snrld:latest@sha256:032c43ec209f14b8ccc11d6c831c175b07980d5e01b627d4dc61c4ddf77c4746
           env:
             - name: PUBLIC_URL
               value: https://snarled.aly.town
