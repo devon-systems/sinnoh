@@ -59,6 +59,11 @@ _: {
           };
           inhibit_rules = [
             {
+              source_matchers = [''alertname="NodeDiskSpaceCritical"''];
+              target_matchers = [''alertname="NodeDiskSpaceLow"''];
+              equal = ["cluster" "instance" "device" "mountpoint"];
+            }
+            {
               source_matchers = [''alertname="KubernetesDeploymentUnavailable"''];
               target_matchers = [''alertname="KubernetesDeploymentReplicasMissing"''];
               equal = ["cluster" "namespace" "deployment"];

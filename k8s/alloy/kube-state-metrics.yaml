@@ -33,6 +33,64 @@ spec:
       retries: 3
   values:
     replicas: 1
+    rbac:
+      extraRules:
+        - apiGroups: [kustomize.toolkit.fluxcd.io]
+          resources: [kustomizations]
+          verbs: [list, watch]
+        - apiGroups: [helm.toolkit.fluxcd.io]
+          resources: [helmreleases]
+          verbs: [list, watch]
+        - apiGroups: [source.toolkit.fluxcd.io]
+          resources: [gitrepositories, helmrepositories, helmcharts]
+          verbs: [list, watch]
+    customResourceState:
+      enabled: true
+      config:
+        spec:
+          resources:
+            - groupVersionKind:
+                group: kustomize.toolkit.fluxcd.io
+                version: v1
+                kind: Kustomization
+              metricNamePrefix: gotk
+              metrics: &flux-resource-metrics
+                - name: resource_info
+                  help: The current readiness and suspension state of a Flux resource.
+                  each:
+                    type: Info
+                    info:
+                      labelsFromPath:
+                        name: [metadata, name]
+                  labelsFromPath:
+                    namespace: [metadata, namespace]
+                    suspended: [spec, suspend]
+                    ready: [status, conditions, "[type=Ready]", status]
+                    source_type: [spec, type]
+            - groupVersionKind:
+                group: helm.toolkit.fluxcd.io
+                version: v2
+                kind: HelmRelease
+              metricNamePrefix: gotk
+              metrics: *flux-resource-metrics
+            - groupVersionKind:
+                group: source.toolkit.fluxcd.io
+                version: v1
+                kind: GitRepository
+              metricNamePrefix: gotk
+              metrics: *flux-resource-metrics
+            - groupVersionKind:
+                group: source.toolkit.fluxcd.io
+                version: v1
+                kind: HelmRepository
+              metricNamePrefix: gotk
+              metrics: *flux-resource-metrics
+            - groupVersionKind:
+                group: source.toolkit.fluxcd.io
+                version: v1
+                kind: HelmChart
+              metricNamePrefix: gotk
+              metrics: *flux-resource-metrics
     collectors:
       - nodes
       - namespaces
@@ -54,6 +112,7 @@ spec:
         cpu: 100m
         memory: 128Mi
     metricAllowlist:
+      - gotk_resource_info
       - kube_node_info
       - kube_node_status_allocatable
       - kube_node_status_condition

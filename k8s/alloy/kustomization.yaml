@@ -4,4 +4,4 @@ namespace: flux-system
 resources:
   - repository.yaml
   - release.yaml # Application, ingress, and Kubernetes metrics collection.
-  - kube-state-metrics.yaml
+  - kube-state-metrics.yaml # Kubernetes and Flux resource status metrics.
