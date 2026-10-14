@@ -31,6 +31,8 @@ spec:
           env:
             - name: SKYTRACE_BLOCK_TARGET_DID
               value: "did:plc:jwxdvd2mdtdq7la7toiy2rjc"
+            - name: SKYTRACE_HIDDEN_DIDS
+              value: "did:plc:ksjfbda7262bbqmuoly54lww"
           ports:
             - name: http
               containerPort: 80
