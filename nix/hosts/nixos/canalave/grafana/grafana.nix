@@ -84,6 +84,21 @@ _: {
               access = "proxy";
               url = "http://100.81.61.31:3030";
             }
+            {
+              name = "Hoenn Prometheus";
+              uid = "hoenn-prometheus";
+              type = "prometheus";
+              access = "proxy";
+              url = "http://mauville.narwhal-snapper.ts.net:3020";
+              jsonData.timeInterval = "60s";
+            }
+            {
+              name = "Hoenn Loki";
+              uid = "hoenn-loki";
+              type = "loki";
+              access = "proxy";
+              url = "http://mauville.narwhal-snapper.ts.net:3030";
+            }
           ];
         };
       };
