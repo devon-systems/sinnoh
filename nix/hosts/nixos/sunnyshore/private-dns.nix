@@ -15,7 +15,6 @@
         "  bind 10.254.0.2 10.254.1.1"
         "  hosts {"
         "    10.254.1.6 fallarbor.hoenn"
-        "    10.254.1.5 fortree.hoenn"
         "    10.254.1.9 lilycove.hoenn"
         "    10.254.1.2 mauville.hoenn"
         "    10.254.1.7 pacifidlog.hoenn"
@@ -23,6 +22,7 @@
         "    10.254.1.1 sunnyshore.hoenn"
         "    10.254.1.3 rustboro.hoenn"
         "    10.254.1.4 sootopolis.hoenn"
+        "    10.254.1.5 verdanturf.hoenn"
         "  }"
         "}"
       ];

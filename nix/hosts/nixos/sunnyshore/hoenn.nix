@@ -20,9 +20,9 @@
       publicKey = "ezW8vZQUpvcb2ltr8BOIn+iZ/lXI0mvNLs49ZiaZnCA=";
     };
 
-    fortree = {
+    verdanturf = {
       address = "10.254.1.5";
-      publicKey = "rquW00TzyERo86qdjA+Xc4dtFfNQIidxxIkp9Y6hSBY=";
+      publicKey = "Grk570okUSWaxah004BUIEbul5IyjDsaoRgYV0fu0ho=";
     };
 
     fallarbor = {
