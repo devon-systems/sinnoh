@@ -4,7 +4,6 @@
 keys:
   # === user keys (aly@<host>) ===
   - &user_aly_canalave age1zj2aq2a2v3ngcer7s3jz6pufhh8ula8pw56etmy28dy25wrkk3vq59hu2s
-  - &user_aly_fortree age1tgm3rcc2glqjxl5al2r780aweywv5tc2u065fzqlntwjzws4kckqepz7nl
   - &user_aly_goldenrod age1e5a0aaueyk34klry2qk094zrwfsvga0uft93mwweye30xhqhvfzs3jgqku
   - &user_aly_lilycove age1tdgfvwl4qdptyvgxju3rwz9uh45hz422txzcgsrwm4f4f96x558skzxklr
   - &user_aly_mauville age1876lthmlfq2aq6nm6z2qyu0ed4aa5ss68xvnlw5cqxcdtzslaqrqzgcmlm
@@ -12,10 +11,10 @@ keys:
   - &user_aly_petalburg age162sx8kppp90mjxw88eqs78hgnpkddf8k9kgtksmmexzvcdxknpkspmkgaf
   - &user_aly_rustboro age1fczwtlqdqq7pjyzna2yl9nvmhpe68zk5k6nyn0dt4sp0lts04anskhcmu6
   - &user_aly_sootopolis age15td0jk5e2qeq2pexvxguhuuaxuaa7nhql7mhx9jr79caska6t4pqdv5spl
+  - &user_aly_verdanturf age1zl4dad3jwhff9f8smv9l2g78g2fpa7huye9354y9vvhrw03vs47skqhue3
   # === host keys (root@<host>) ===
   - &host_canalave age198xvgu5frdusj6gnmducql6h634uapkcznnf704wn8wfqcumu98sttjlrc
   - &host_fallarbor age1v4x5alkmvxsx5jsrwpecx0tne0ch2rwfkk0rq5w8x578j2pf5urssg5gx2
-  - &host_fortree age1nl6m6gpea4kxr53c35y2tp0dd26nz8jurd7058nf0fmf2wqzxu0qsdg2fk
   - &host_jubilife age157en2pt286a22pxzyugt84ak6rn2at89tpma88juqfgj84lme5csq4999g
   - &host_lilycove age1l5t62uzsj05pzftv9wg6s346csxyq202vxmmyyx8gwy8zu2nrfrs7v2a4z
   - &host_mauville age1su5lre6favcv6gdc50yh7ecv33qgfp0tm6klunpuasa3q79kmqtsykaq0d
@@ -24,6 +23,7 @@ keys:
   - &host_rustboro age1c62ajygt7yx5k0f85h6w3tquu4ak0gg5c9drrhh34yyyea3xtpas8knau3
   - &host_sootopolis age1gz3835qckr54gn44znlefa6m7yvjx83gptq8keslyq944nfxsfzqndenmt
   - &host_sunnyshore age195mcxysuh5yxcuvpmftsfya3xgh9m2ehusnfsxthe5k8sd4kjv6s4upyl0
+  - &host_verdanturf age1stu2yfc2lvl7vep499lwehwlgm7328u64m7z5sddvekfre95xguqj267kr
   - &flux_k8s age1yq47x0cyf95jg372v84ttptgnppsrfmxshsua6p58ecmgzxc5c0s5stfth
 
 creation_rules:
@@ -31,7 +31,6 @@ creation_rules:
     key_groups:
       - age:
           - *user_aly_canalave
-          - *user_aly_fortree
           - *user_aly_goldenrod
           - *user_aly_lilycove
           - *user_aly_mauville
@@ -39,9 +38,9 @@ creation_rules:
           - *user_aly_petalburg
           - *user_aly_rustboro
           - *user_aly_sootopolis
+          - *user_aly_verdanturf
           - *host_canalave
           - *host_fallarbor
-          - *host_fortree
           - *host_jubilife
           - *host_lilycove
           - *host_mauville
@@ -50,11 +49,11 @@ creation_rules:
           - *host_rustboro
           - *host_sootopolis
           - *host_sunnyshore
+          - *host_verdanturf
   - path_regex: ^k8s/secrets/.*\.ya?ml$
     key_groups:
       - age:
           - *user_aly_canalave
-          - *user_aly_fortree
           - *user_aly_goldenrod
           - *user_aly_lilycove
           - *user_aly_mauville
@@ -62,9 +61,9 @@ creation_rules:
           - *user_aly_petalburg
           - *user_aly_rustboro
           - *user_aly_sootopolis
+          - *user_aly_verdanturf
           - *host_canalave
           - *host_fallarbor
-          - *host_fortree
           - *host_jubilife
           - *host_lilycove
           - *host_mauville
@@ -73,4 +72,5 @@ creation_rules:
           - *host_rustboro
           - *host_sootopolis
           - *host_sunnyshore
+          - *host_verdanturf
           - *flux_k8s
