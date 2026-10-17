@@ -8,3 +8,14 @@ resource "cloudflare_dns_record" "snarled_at_apex_a" {
   tags     = []
   settings = {}
 }
+
+resource "cloudflare_dns_record" "snarled_at_www_cname" {
+  zone_id  = local.zones.snarled_at
+  name     = "www.snarled.at"
+  type     = "CNAME"
+  content  = "snarled.at"
+  proxied  = true
+  ttl      = 1
+  tags     = []
+  settings = { flatten_cname = false }
+}
