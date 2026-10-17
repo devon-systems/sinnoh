@@ -8,3 +8,14 @@ resource "cloudflare_dns_record" "haunt_at_apex_a" {
   tags     = []
   settings = {}
 }
+
+resource "cloudflare_dns_record" "haunt_at_www_cname" {
+  zone_id  = local.zones.haunt_at
+  name     = "www.haunt.at"
+  type     = "CNAME"
+  content  = "haunt.at"
+  proxied  = true
+  ttl      = 1
+  tags     = []
+  settings = { flatten_cname = false }
+}

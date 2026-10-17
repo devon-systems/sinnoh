@@ -20,6 +20,17 @@ resource "cloudflare_dns_record" "aly_social_apex_a" {
   settings = {}
 }
 
+resource "cloudflare_dns_record" "aly_social_www_cname" {
+  zone_id  = local.zones.aly_social
+  name     = "www.aly.social"
+  type     = "CNAME"
+  content  = "aly.social"
+  proxied  = false
+  ttl      = 1
+  tags     = []
+  settings = { flatten_cname = false }
+}
+
 resource "cloudflare_dns_record" "aly_social_send_mx" {
   zone_id  = local.zones.aly_social
   name     = "send.aly.social"

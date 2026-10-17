@@ -4,12 +4,12 @@ resources:
   - vaultwarden.yaml
   - aly-codes.yaml
   - atbbs.yaml
-  - haunt.yaml
+  - haunt.yaml # haunt.at and its www alias.
   - morgan.yaml
   - morsels.yaml
   - skytrace.yaml
   - slingshot.yaml
   - snrld.yaml
   - switchyard.yaml
-  - tranquil-pds.yaml
+  - tranquil-pds.yaml # PDS routes and the www.aly.social website redirect.
   - bobbin.yaml

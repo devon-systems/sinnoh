@@ -6,16 +6,43 @@ metadata:
 spec:
   secretName: haunt-tls
   issuerRef: { kind: ClusterIssuer, name: letsencrypt }
-  dnsNames: [haunt.at]
+  dnsNames: [haunt.at, www.haunt.at]
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: haunt-canonical-host
+  namespace: haunt
+spec:
+  redirectRegex:
+    regex: "^https?://www[.]haunt[.]at(/.*)$"
+    replacement: "https://haunt.at${1}"
+    permanent: true
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
-metadata: { name: haunt, namespace: haunt }
+metadata:
+  name: haunt
+  namespace: haunt
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: haunt-haunt-canonical-host@kubernetescrd
 spec:
   ingressClassName: traefik
-  tls: [{ hosts: [haunt.at], secretName: haunt-tls }]
+  tls: [{ hosts: [haunt.at, www.haunt.at], secretName: haunt-tls }]
   rules:
     - host: haunt.at
+      http:
+        {
+          paths:
+            [
+              {
+                path: /,
+                pathType: Prefix,
+                backend: { service: { name: haunt, port: { name: http } } },
+              },
+            ],
+        }
+    - host: www.haunt.at
       http:
         {
           paths:

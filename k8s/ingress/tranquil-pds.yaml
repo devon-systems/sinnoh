@@ -76,3 +76,38 @@ spec:
               },
             ],
         }
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: aly-social-canonical-host
+  namespace: tranquil-pds
+spec:
+  redirectRegex:
+    regex: "^https?://www[.]aly[.]social(/.*)$"
+    replacement: "https://aly.social${1}"
+    permanent: true
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: aly-social-www
+  namespace: tranquil-pds
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: tranquil-pds-aly-social-canonical-host@kubernetescrd
+    # Prefer the website alias over the PDS account wildcard router.
+    traefik.ingress.kubernetes.io/router.priority: "100"
+spec:
+  ingressClassName: traefik
+  tls: [{ hosts: [www.aly.social], secretName: tranquil-pds-tls }]
+  rules:
+    - host: www.aly.social
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: pacifico
+                port:
+                  number: 80
