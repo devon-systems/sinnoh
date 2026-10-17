@@ -6,7 +6,7 @@ metadata:
 spec:
   secretName: snrld-tls
   issuerRef: { kind: ClusterIssuer, name: letsencrypt }
-  dnsNames: [snarled.at, www.snarled.at, snarled.aly.town]
+  dnsNames: [snarled.at, www.snarled.at]
 ---
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
@@ -15,8 +15,8 @@ metadata:
   namespace: snrld
 spec:
   redirectRegex:
-    regex: "^https?://(www[.]snarled[.]at|snarled[.]aly[.]town)(/.*)$"
-    replacement: "https://snarled.at${2}"
+    regex: "^https?://www[.]snarled[.]at(/.*)$"
+    replacement: "https://snarled.at${1}"
     permanent: true
 ---
 apiVersion: networking.k8s.io/v1
@@ -28,13 +28,7 @@ metadata:
     traefik.ingress.kubernetes.io/router.middlewares: snrld-snrld-canonical-host@kubernetescrd
 spec:
   ingressClassName: traefik
-  tls:
-    [
-      {
-        hosts: [snarled.at, www.snarled.at, snarled.aly.town],
-        secretName: snrld-tls,
-      },
-    ]
+  tls: [{ hosts: [snarled.at, www.snarled.at], secretName: snrld-tls }]
   rules:
     - host: snarled.at
       http:
@@ -49,18 +43,6 @@ spec:
             ],
         }
     - host: www.snarled.at
-      http:
-        {
-          paths:
-            [
-              {
-                path: /,
-                pathType: Prefix,
-                backend: { service: { name: snrld, port: { name: http } } },
-              },
-            ],
-        }
-    - host: snarled.aly.town
       http:
         {
           paths:
