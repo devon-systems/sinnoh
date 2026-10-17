@@ -3,7 +3,7 @@ kind: Kustomization
 namespace: snrld
 resources:
   - namespace.yaml
-  - workload.yaml
+  - workload.yaml # snarled.at public URL and OAuth client metadata.
 patches:
   - target:
       kind: Deployment
