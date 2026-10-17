@@ -26,5 +26,4 @@ resources:
   - morsels.yaml
   - slingshot.yaml
   - bobbin.yaml
-  - hydrant.yaml
   - ingress.yaml
