@@ -27,7 +27,7 @@ spec:
               app: skytrace
       containers:
         - name: skytrace
-          image: ghcr.io/alyraffauf/skytrace:latest@sha256:855ba05f8e10a12aaf936a40eb889ee2446b4c9b50848fdb4a9c61e9e4784913
+          image: ghcr.io/alyraffauf/skytrace:latest@sha256:b4734b2d51d59057a702190369261f6e210a1f9c8f38834e2db29c6220e77015
           env:
             - name: SKYTRACE_DONATE_REMINDER_DAYS
               value: "14"
