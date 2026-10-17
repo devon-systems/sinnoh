@@ -2,7 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - namespace.yaml
-  - workload.yaml
+  - workload.yaml # SkyTrace image pin, deployment recovery, and profile visibility policy.
 patches:
   - target:
       kind: Deployment
@@ -12,7 +12,3 @@ patches:
         path: /spec/template/spec/topologySpreadConstraints/0/matchLabelKeys
         value:
           - pod-template-hash
-images:
-  - name: ghcr.io/alyraffauf/skytrace
-    newTag: latest
-    digest: sha256:855ba05f8e10a12aaf936a40eb889ee2446b4c9b50848fdb4a9c61e9e4784913
