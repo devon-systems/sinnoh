@@ -8,5 +8,6 @@ locals {
     atbbs_xyz    = "5e616e605d3eeadd19fb427e60b42d16"
     haunt_at     = "b38972c9d914e82d6d058ed0544c4de1"
     morsels_blue = "d983d1ec759d3a8cfee30d1c8a6e8603"
+    snarled_at   = "540034d8fedcfefaadf1271f5d49fddd"
   }
 }
