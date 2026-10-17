@@ -2,7 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - namespace.yaml
-  - workload.yaml # SkyTrace image pin, deployment recovery, and profile visibility policy.
+  - workload.yaml # SkyTrace image pin, runtime configuration, and profile visibility policy.
 patches:
   - target:
       kind: Deployment
