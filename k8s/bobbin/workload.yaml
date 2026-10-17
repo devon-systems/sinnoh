@@ -52,7 +52,7 @@ spec:
             - name: BOBBIN_BIND
               value: "0.0.0.0:8090"
             - name: BOBBIN_HYDRANT_URL
-              value: "https://api.tangled.org"
+              value: "http://hydrant.hydrant.svc.cluster.local:3000"
             - name: BOBBIN_SLINGSHOT_URL
               value: "http://slingshot.slingshot.svc.cluster.local"
             - name: BOBBIN_TRUSTED_PROXIES

@@ -6,6 +6,7 @@ metadata:
 spec:
   dependsOn:
     - name: slingshot
+    - name: hydrant
   interval: 10m
   path: ./k8s/bobbin
   prune: true
