@@ -9,7 +9,7 @@ resources:
   - morsels.yaml
   - skytrace.yaml
   - slingshot.yaml
-  - snrld.yaml # snarled.at TLS and canonical host redirect.
+  - snrld.yaml # snarled.at TLS, www alias, and canonical host redirects.
   - switchyard.yaml
   - tranquil-pds.yaml # PDS routes and the www.aly.social website redirect.
   - bobbin.yaml
