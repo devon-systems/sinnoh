@@ -130,7 +130,7 @@ spec:
               topologyKey: kubernetes.io/hostname
       containers:
         - name: tranquil-pds
-          image: atcr.io/tranquil.farm/tranquil-pds:latest@sha256:bfbcb3b574bd836e9719012c98b172a8ebea2046acb6a87cb989eeb4f4dba9a4
+          image: atcr.io/tranquil.farm/tranquil-pds:latest@sha256:1313a9c7c4aae73413514416131d705e202db8b58b001ef9a22ee4a1674a48fe
           env:
             - name: AWS_REGION
               value: us-east-005
