@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aly-town
+  namespace: aly-town
+  labels:
+    app: aly-town
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: aly-town
+  template:
+    metadata:
+      labels:
+        app: aly-town
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      topologySpreadConstraints:
+        - maxSkew: 1
+          minDomains: 2
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: aly-town
+      containers:
+        - name: aly-town
+          image: ghcr.io/alyraffauf/aly.town:latest@sha256:62873ebc7f259ba03bb84302c30be51362474e29308fd9f352e57b043c5e8f6c
+          ports:
+            - name: http
+              containerPort: 80
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aly-town
+  namespace: aly-town
+spec:
+  selector:
+    app: aly-town
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

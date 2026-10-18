@@ -9,6 +9,17 @@ resource "cloudflare_dns_record" "aly_town_apex_a" {
   settings = {}
 }
 
+resource "cloudflare_dns_record" "aly_town_www_cname" {
+  zone_id  = local.zones.aly_town
+  name     = "www.aly.town"
+  type     = "CNAME"
+  content  = "aly.town"
+  proxied  = true
+  ttl      = 1
+  tags     = []
+  settings = { flatten_cname = false }
+}
+
 resource "cloudflare_dns_record" "aly_town_skytrace_a" {
   zone_id  = local.zones.aly_town
   name     = "skytrace.aly.town"

@@ -18,6 +18,7 @@ resources:
   - traefik.yaml
   - atbbs.yaml
   - aly-codes.yaml
+  - aly-town.yaml
   - haunt.yaml
   - skytrace.yaml
   - snrld.yaml

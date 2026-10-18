@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - vaultwarden.yaml
   - aly-codes.yaml
+  - aly-town.yaml
   - atbbs.yaml
   - haunt.yaml # haunt.at and its www alias.
   - morgan.yaml
