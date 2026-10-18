@@ -22,6 +22,9 @@ metadata:
   namespace: kube-system
 spec:
   valuesContent: |-
+    service:
+      spec:
+        externalTrafficPolicy: Local
     additionalArguments:
       - --accesslog.fields.queryparameters.defaultmode=drop
     metrics:
