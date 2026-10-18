@@ -27,7 +27,7 @@ spec:
               app: aly-town
       containers:
         - name: aly-town
-          image: ghcr.io/alyraffauf/aly.town:latest@sha256:62873ebc7f259ba03bb84302c30be51362474e29308fd9f352e57b043c5e8f6c
+          image: ghcr.io/alyraffauf/aly.town:latest@sha256:0b0e99cadfea70f93e24adfb58fbfde470ad9f6dd81047547bcb2151679cdc70
           ports:
             - name: http
               containerPort: 80
