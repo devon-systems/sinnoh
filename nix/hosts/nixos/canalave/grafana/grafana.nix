@@ -75,14 +75,14 @@ _: {
               jsonData.timeInterval = "30s";
               type = "prometheus";
               access = "proxy";
-              url = "http://100.81.61.31:3020";
+              url = "http://olivine.narwhal-snapper.ts.net:3020";
             }
             {
               name = "Johto Loki";
               uid = "P9B94E49EB647514A";
               type = "loki";
               access = "proxy";
-              url = "http://100.81.61.31:3030";
+              url = "http://olivine.narwhal-snapper.ts.net:3030";
             }
             {
               name = "Hoenn Prometheus";
