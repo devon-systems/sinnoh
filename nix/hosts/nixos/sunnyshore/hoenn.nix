@@ -25,11 +25,6 @@
       publicKey = "Grk570okUSWaxah004BUIEbul5IyjDsaoRgYV0fu0ho=";
     };
 
-    fallarbor = {
-      address = "10.254.1.6";
-      publicKey = "ZbPq07drguGi6udpyBj1zOsyoxQzcm4awstyWIJRzAQ=";
-    };
-
     pacifidlog = {
       address = "10.254.1.7";
       publicKey = "E8FXq8GhLhP83beFTzyN5G37rW5DgM9YcwtnQmaKQHs=";

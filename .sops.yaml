@@ -18,7 +18,6 @@ keys:
   - &user_aly_verdanturf age1zl4dad3jwhff9f8smv9l2g78g2fpa7huye9354y9vvhrw03vs47skqhue3
   # === host keys (root@<host>) ===
   - &host_canalave age198xvgu5frdusj6gnmducql6h634uapkcznnf704wn8wfqcumu98sttjlrc
-  - &host_fallarbor age1v4x5alkmvxsx5jsrwpecx0tne0ch2rwfkk0rq5w8x578j2pf5urssg5gx2
   - &host_jubilife age157en2pt286a22pxzyugt84ak6rn2at89tpma88juqfgj84lme5csq4999g
   - &host_lilycove age1l5t62uzsj05pzftv9wg6s346csxyq202vxmmyyx8gwy8zu2nrfrs7v2a4z
   - &host_mauville age1su5lre6favcv6gdc50yh7ecv33qgfp0tm6klunpuasa3q79kmqtsykaq0d
@@ -44,7 +43,6 @@ creation_rules:
           - *user_aly_sootopolis
           - *user_aly_verdanturf
           - *host_canalave
-          - *host_fallarbor
           - *host_jubilife
           - *host_lilycove
           - *host_mauville
@@ -67,7 +65,6 @@ creation_rules:
           - *user_aly_sootopolis
           - *user_aly_verdanturf
           - *host_canalave
-          - *host_fallarbor
           - *host_jubilife
           - *host_lilycove
           - *host_mauville

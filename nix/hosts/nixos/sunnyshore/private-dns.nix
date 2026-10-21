@@ -14,7 +14,6 @@
         "hoenn:53 {"
         "  bind 10.254.0.2 10.254.1.1"
         "  hosts {"
-        "    10.254.1.6 fallarbor.hoenn"
         "    10.254.1.9 lilycove.hoenn"
         "    10.254.1.2 mauville.hoenn"
         "    10.254.1.7 pacifidlog.hoenn"
