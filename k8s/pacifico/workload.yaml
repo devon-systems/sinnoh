@@ -15,6 +15,9 @@ spec:
       labels:
         app: pacifico
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       automountServiceAccountToken: false
       enableServiceLinks: false
       topologySpreadConstraints:
