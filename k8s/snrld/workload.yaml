@@ -17,6 +17,9 @@ spec:
     spec:
       automountServiceAccountToken: false
       enableServiceLinks: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       topologySpreadConstraints:
         - maxSkew: 1
           minDomains: 2
@@ -29,6 +32,11 @@ spec:
               app: snrld
       containers:
         - name: snrld
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - NET_RAW
           image: ghcr.io/alyraffauf/snrld:latest@sha256:6ada188f1bf82fbc2c1dcea00f9d9824496e3314c5180b510bb81607435310e9
           env:
             - name: PUBLIC_URL
