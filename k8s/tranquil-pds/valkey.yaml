@@ -34,10 +34,18 @@ spec:
     spec:
       automountServiceAccountToken: false
       enableServiceLinks: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       nodeSelector:
         kubernetes.io/hostname: sunnyshore
       containers:
         - name: valkey
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - NET_RAW
           image: valkey/valkey:9-alpine@sha256:48332870af354a799964c0012ae1194a0bf2bf894eb508f945810596dc2d8d11
           args:
             - valkey-server
