@@ -3,7 +3,7 @@ kind: Kustomization
 resources:
   - network-policy.yaml
   - namespace.yaml
-  - workload.yaml # SkyTrace image 8b54be87, runtime configuration, and profile visibility policy.
+  - workload.yaml
 patches:
   - target:
       kind: Deployment

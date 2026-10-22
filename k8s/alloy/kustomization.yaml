@@ -3,5 +3,5 @@ kind: Kustomization
 resources:
   - storage.yaml
   - repository.yaml
-  - release.yaml # Application, ingress, and Kubernetes metrics collection.
-  - kube-state-metrics.yaml # Kubernetes and Flux resource status metrics.
+  - release.yaml
+  - kube-state-metrics.yaml

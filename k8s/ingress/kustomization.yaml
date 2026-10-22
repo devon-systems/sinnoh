@@ -5,12 +5,12 @@ resources:
   - aly-codes.yaml
   - aly-town.yaml
   - atbbs.yaml
-  - haunt.yaml # haunt.at and its www alias.
+  - haunt.yaml
   - morgan.yaml
   - morsels.yaml
   - skytrace.yaml
   - slingshot.yaml
-  - snrld.yaml # snarled.at TLS and www redirect.
+  - snrld.yaml
   - switchyard.yaml
-  - tranquil-pds.yaml # PDS routes and the www.aly.social website redirect.
+  - tranquil-pds.yaml
   - bobbin.yaml

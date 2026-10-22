@@ -1,7 +1,6 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  # Cluster capacity includes an extra PDS replica during rolling updates.
   - cluster.yaml
   - network-policy.yaml
   - vaultwarden-database.yaml

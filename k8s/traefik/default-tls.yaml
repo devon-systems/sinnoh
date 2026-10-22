@@ -25,7 +25,6 @@ spec:
     service:
       spec:
         externalTrafficPolicy: Local
-        # Route public traffic through kube-proxy before ServiceLB can masquerade it.
         externalIPs:
           - 40.160.83.152
     additionalArguments:

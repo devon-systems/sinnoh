@@ -7,7 +7,6 @@ spec:
   podSelector:
     matchLabels:
       cnpg.io/cluster: pg-shared
-  # Preserve outbound API, DNS, and backup traffic.
   policyTypes:
     - Ingress
   ingress:
@@ -27,7 +26,6 @@ spec:
       ports:
         - protocol: TCP
           port: 5432
-    # The operator and database peers also use the instance manager.
     - from:
         - podSelector:
             matchLabels:

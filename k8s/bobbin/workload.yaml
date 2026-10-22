@@ -86,7 +86,6 @@ spec:
               port: http
             periodSeconds: 30
           readinessProbe:
-            # Coverage returns HTTP 200 during replay, so check the JSON body.
             exec:
               command:
                 - /health/busybox

@@ -3,7 +3,7 @@ kind: Kustomization
 resources:
   - network-policy.yaml
   - namespace.yaml
-  - workload.yaml # Web image from 3d3864e with a PNG favicon fallback.
+  - workload.yaml
 patches:
   - target:
       kind: Deployment

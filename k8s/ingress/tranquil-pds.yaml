@@ -95,7 +95,6 @@ metadata:
   namespace: tranquil-pds
   annotations:
     traefik.ingress.kubernetes.io/router.middlewares: tranquil-pds-aly-social-canonical-host@kubernetescrd
-    # Prefer the website alias over the PDS account wildcard router.
     traefik.ingress.kubernetes.io/router.priority: "100"
 spec:
   ingressClassName: traefik
