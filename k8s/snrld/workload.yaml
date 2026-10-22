@@ -15,6 +15,9 @@ spec:
       labels:
         app: snrld
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       automountServiceAccountToken: false
       enableServiceLinks: false
       topologySpreadConstraints:
@@ -27,6 +30,11 @@ spec:
               app: snrld
       containers:
         - name: snrld
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - NET_RAW
           image: ghcr.io/alyraffauf/snrld:latest@sha256:032c43ec209f14b8ccc11d6c831c175b07980d5e01b627d4dc61c4ddf77c4746
           env:
             - name: PUBLIC_URL
