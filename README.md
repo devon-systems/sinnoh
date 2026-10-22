@@ -71,6 +71,9 @@ deploys every registered node.
 
 Flux deploys Kubernetes workloads from `master`. OpenTofu manages DNS.
 
+[Workload security](docs/workload-security.md) describes container permissions,
+network policies, and their exceptions.
+
 ## Secrets
 
 SOPS encrypts secrets for the recipients in `.sops.yaml`. Public keys live in
