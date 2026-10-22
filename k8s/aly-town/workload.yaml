@@ -35,7 +35,7 @@ spec:
             capabilities:
               drop:
                 - NET_RAW
-          image: ghcr.io/alyraffauf/aly.town:latest@sha256:71ca84488fef11db924027384fc38f78bf68a509fd6bffcf459ed2bf9e3c1638
+          image: ghcr.io/alyraffauf/aly.town:latest@sha256:658c795f219edb58c831b92b91fbf906dd46a452f559a6ea919e8e607add850b
           ports:
             - name: http
               containerPort: 80
