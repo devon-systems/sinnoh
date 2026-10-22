@@ -272,14 +272,6 @@ _: {
       }
 
       {
-        title = "Cherrygrove service";
-        type = "stat";
-        unit = "short";
-        targets = [(target ''node_systemd_unit_state{job="node",instance="goldenrod",name="microvm@cherrygrove.service",state=~"active|failed"}'' "{{state}}")];
-        description = "Observed only through Goldenrod systemd. No collection inside the VM.";
-      }
-
-      {
         title = "Collector health";
         type = "table";
         transformations = [
