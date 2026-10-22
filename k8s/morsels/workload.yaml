@@ -17,10 +17,18 @@ spec:
       labels:
         app: morsels
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       automountServiceAccountToken: false
       enableServiceLinks: false
       containers:
         - name: morsels
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - NET_RAW
           image: ghcr.io/alyraffauf/morsels:latest@sha256:a16a51a3571deffe9c372aa604e78694c9bb1d75201ce903a4c8f19ec42a39a0
           ports:
             - name: http
