@@ -11,6 +11,15 @@ _: {
       };
       scrapeConfigs = [
         {
+          job_name = "loki";
+          static_configs = [
+            {
+              targets = ["127.0.0.1:3030"];
+              labels.instance = "canalave";
+            }
+          ];
+        }
+        {
           job_name = "node";
           static_configs = [
             {
