@@ -1,100 +1,3 @@
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: tranquil-pds-valkey-data
-  namespace: tranquil-pds
-  labels:
-    app: tranquil-pds-valkey
-spec:
-  accessModes:
-    - ReadWriteOnce
-  storageClassName: local-path
-  resources:
-    requests:
-      storage: 1Gi
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: tranquil-pds-valkey
-  namespace: tranquil-pds
-  labels:
-    app: tranquil-pds-valkey
-spec:
-  replicas: 1
-  strategy:
-    type: Recreate
-  selector:
-    matchLabels:
-      app: tranquil-pds-valkey
-  template:
-    metadata:
-      labels:
-        app: tranquil-pds-valkey
-    spec:
-      automountServiceAccountToken: false
-      enableServiceLinks: false
-      nodeSelector:
-        kubernetes.io/hostname: sunnyshore
-      containers:
-        - name: valkey
-          image: valkey/valkey:9-alpine@sha256:48332870af354a799964c0012ae1194a0bf2bf894eb508f945810596dc2d8d11
-          args:
-            - valkey-server
-            - --appendonly
-            - "yes"
-            - --appendfsync
-            - everysec
-            - --maxmemory
-            - 256mb
-            - --maxmemory-policy
-            - volatile-lru
-          ports:
-            - name: valkey
-              containerPort: 6379
-          resources:
-            requests:
-              cpu: 25m
-              memory: 128Mi
-            limits:
-              cpu: "1"
-              memory: 512Mi
-          volumeMounts:
-            - name: data
-              mountPath: /data
-          startupProbe:
-            tcpSocket:
-              port: valkey
-            periodSeconds: 5
-            failureThreshold: 12
-          livenessProbe:
-            tcpSocket:
-              port: valkey
-            periodSeconds: 30
-          readinessProbe:
-            tcpSocket:
-              port: valkey
-            periodSeconds: 10
-      volumes:
-        - name: data
-          persistentVolumeClaim:
-            claimName: tranquil-pds-valkey-data
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: tranquil-pds-valkey
-  namespace: tranquil-pds
-  labels:
-    app: tranquil-pds-valkey
-spec:
-  selector:
-    app: tranquil-pds-valkey
-  ports:
-    - name: valkey
-      port: 6379
-      targetPort: valkey
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -130,6 +33,16 @@ spec:
               topologyKey: kubernetes.io/hostname
       containers:
         - name: tranquil-pds
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            runAsGroup: 65532
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
           image: atcr.io/tranquil.farm/tranquil-pds:latest@sha256:cf85f4c9e3395a9cfab3db8214e66de0168f508fd09f3b1d82788caf8c70f67a
           env:
             - name: AWS_REGION

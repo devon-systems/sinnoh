@@ -3,6 +3,3 @@ kind: Kustomization
 namespace: slingshot
 resources:
   - workload.yaml
-replicas:
-  - name: slingshot
-    count: 1

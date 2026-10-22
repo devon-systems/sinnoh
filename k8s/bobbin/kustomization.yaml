@@ -4,6 +4,3 @@ namespace: bobbin
 resources:
   - namespace.yaml
   - workload.yaml
-replicas:
-  - name: bobbin
-    count: 1
