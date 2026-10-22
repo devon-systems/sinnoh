@@ -5,3 +5,12 @@ resources:
   - repository.yaml
   - release.yaml
   - kube-state-metrics.yaml
+configMapGenerator:
+  - name: alloy-config-values
+    namespace: flux-system
+    files:
+      - config.alloy
+    options:
+      disableNameSuffixHash: true
+      labels:
+        reconcile.fluxcd.io/watch: Enabled
