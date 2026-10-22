@@ -35,7 +35,7 @@ spec:
             capabilities:
               drop:
                 - ALL
-          image: ghcr.io/alyraffauf/slingshot:latest@sha256:d67f97ef46dffc7656366149e4ef5c88349b797a6058c38cc69f2d1fdd18e159
+          image: ghcr.io/alyraffauf/slingshot:latest@sha256:faae0a80dec7871d98b62918c68fe261488ef11394f9088e7c7c194fd4293a98
           env:
             - name: SLINGSHOT_COLLECT_METRICS
               value: "true"
