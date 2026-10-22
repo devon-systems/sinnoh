@@ -15,9 +15,6 @@ spec:
       labels:
         app: morgan
     spec:
-      securityContext:
-        seccompProfile:
-          type: RuntimeDefault
       automountServiceAccountToken: false
       enableServiceLinks: false
       topologySpreadConstraints:
@@ -30,11 +27,6 @@ spec:
               app: morgan
       containers:
         - name: morgan
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - NET_RAW
           image: ghcr.io/alyraffauf/morgantamayo.com:latest@sha256:352b6f6d032c6d6d7ddf8d2870229ccea32858ff4116952c740a19fe148ea912
           ports:
             - name: http

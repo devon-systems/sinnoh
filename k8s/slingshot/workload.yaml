@@ -22,19 +22,10 @@ spec:
       nodeSelector:
         kubernetes.io/hostname: canalave
       securityContext:
-        runAsNonRoot: true
-        runAsUser: 65532
-        runAsGroup: 65532
         seccompProfile:
           type: RuntimeDefault
       containers:
         - name: slingshot
-          securityContext:
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
-            capabilities:
-              drop:
-                - ALL
           image: ghcr.io/alyraffauf/slingshot:latest@sha256:faae0a80dec7871d98b62918c68fe261488ef11394f9088e7c7c194fd4293a98
           env:
             - name: SLINGSHOT_COLLECT_METRICS
@@ -86,12 +77,7 @@ spec:
           volumeMounts:
             - name: cache
               mountPath: /cache
-            - name: tmp
-              mountPath: /tmp
       volumes:
-        - name: tmp
-          emptyDir:
-            sizeLimit: 64Mi
         - name: cache
           emptyDir:
             sizeLimit: 3Gi

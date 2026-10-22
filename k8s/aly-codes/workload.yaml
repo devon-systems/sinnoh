@@ -15,9 +15,6 @@ spec:
       labels:
         app: aly-codes
     spec:
-      securityContext:
-        seccompProfile:
-          type: RuntimeDefault
       automountServiceAccountToken: false
       enableServiceLinks: false
       topologySpreadConstraints:
@@ -30,11 +27,6 @@ spec:
               app: aly-codes
       containers:
         - name: aly-codes
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - NET_RAW
           image: ghcr.io/alyraffauf/aly.codes:latest@sha256:29d319bcab71655c092665c7f2818b637e28aa943301bc60a94e9c9c834a6967
           ports:
             - name: http

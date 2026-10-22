@@ -32,20 +32,12 @@ spec:
       labels:
         app: tranquil-pds-valkey
     spec:
-      securityContext:
-        seccompProfile:
-          type: RuntimeDefault
       automountServiceAccountToken: false
       enableServiceLinks: false
       nodeSelector:
         kubernetes.io/hostname: sunnyshore
       containers:
         - name: valkey
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - NET_RAW
           image: valkey/valkey:9-alpine@sha256:48332870af354a799964c0012ae1194a0bf2bf894eb508f945810596dc2d8d11
           args:
             - valkey-server
@@ -123,9 +115,6 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/port: "3000"
     spec:
-      securityContext:
-        seccompProfile:
-          type: RuntimeDefault
       automountServiceAccountToken: false
       enableServiceLinks: false
       imagePullSecrets:

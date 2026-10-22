@@ -15,9 +15,6 @@ spec:
       labels:
         app: aly-town
     spec:
-      securityContext:
-        seccompProfile:
-          type: RuntimeDefault
       automountServiceAccountToken: false
       enableServiceLinks: false
       topologySpreadConstraints:
@@ -30,11 +27,6 @@ spec:
               app: aly-town
       containers:
         - name: aly-town
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - NET_RAW
           image: ghcr.io/alyraffauf/aly.town:latest@sha256:658c795f219edb58c831b92b91fbf906dd46a452f559a6ea919e8e607add850b
           ports:
             - name: http

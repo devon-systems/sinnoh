@@ -15,9 +15,6 @@ spec:
       labels:
         app: skytrace
     spec:
-      securityContext:
-        seccompProfile:
-          type: RuntimeDefault
       automountServiceAccountToken: false
       enableServiceLinks: false
       topologySpreadConstraints:
@@ -30,11 +27,6 @@ spec:
               app: skytrace
       containers:
         - name: skytrace
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - NET_RAW
           image: ghcr.io/alyraffauf/skytrace:latest@sha256:8b54be87927e416e4a391b1b74ffb2265c6ab51d48da7b146004117b81d8ee18
           env:
             - name: SKYTRACE_DONATE_REMINDER_DAYS

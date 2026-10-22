@@ -15,18 +15,10 @@ spec:
       labels:
         app: atbbs-telnet
     spec:
-      securityContext:
-        seccompProfile:
-          type: RuntimeDefault
       automountServiceAccountToken: false
       enableServiceLinks: false
       containers:
         - name: atbbs-telnet
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - NET_RAW
           image: ghcr.io/alyraffauf/atbbs-telnet:latest@sha256:acb0831374efbc0f881ceb9876105f92de83453035d9bf85aaadb452b7b596d4
           ports:
             - name: telnet
@@ -87,9 +79,6 @@ spec:
       labels:
         app: atbbs-web
     spec:
-      securityContext:
-        seccompProfile:
-          type: RuntimeDefault
       automountServiceAccountToken: false
       enableServiceLinks: false
       topologySpreadConstraints:
@@ -102,11 +91,6 @@ spec:
               app: atbbs-web
       containers:
         - name: atbbs-web
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - NET_RAW
           image: ghcr.io/alyraffauf/atbbs:latest@sha256:054b4bf66a9e8d00f43fa24bf557c92e2356b869ca038a491fa818297386ee8d
           env:
             - name: PUBLIC_URL
