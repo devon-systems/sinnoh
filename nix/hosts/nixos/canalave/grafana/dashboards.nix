@@ -24,6 +24,7 @@ _: {
     panel = index: specification: let
       type = specification.type or "timeseries";
       datasource = specification.datasource or prometheus;
+      instant = type == "stat" || type == "table";
     in {
       id = index + 1;
       inherit type datasource;
@@ -47,12 +48,12 @@ _: {
             if type == "table"
             then "table"
             else "time_series";
-          instant = type == "stat" || type == "table";
-          range = type == "timeseries";
+          inherit instant;
+          range = !instant;
           queryType =
-            if type == "timeseries"
-            then "range"
-            else "instant";
+            if instant
+            then "instant"
+            else "range";
         })
       specification.targets;
       fieldConfig = {
@@ -133,7 +134,13 @@ _: {
           };
       };
       options =
-        if type == "stat"
+        if type == "logs"
+        then {
+          showTime = true;
+          showLabels = true;
+          sortOrder = "Descending";
+        }
+        else if type == "stat"
         then {
           reduceOptions = {
             calcs = ["lastNotNull"];
@@ -721,6 +728,66 @@ _: {
         targets = [(target ''sinnoh_backup_last_success_timestamp_seconds{${backup}} * 1000'' "{{instance}} / {{backup}}")];
       }
     ];
+    reporting = dashboard "sinnoh-observability" "Reporting health" [nodeVariable (variable "namespace" ''label_values(kube_pod_info, namespace)'')] [
+      {
+        title = "Monitoring scrape availability";
+        type = "table";
+        targets = [(target ''up{job=~"prometheus|loki|alloy-host|alloy-kubernetes"}'' "{{job}} / {{instance}}")];
+        description = "Scrape results for backends and collectors. Missing data is Unknown; it does not prove that every expected source exists.";
+      }
+      {
+        title = "Metric delivery backlog";
+        targets = [(target ''prometheus_remote_storage_samples_pending'' "{{job}} / {{instance}}")];
+        description = "Samples waiting in Alloy's persistent metric queue. Increasing backlog means reporting is delayed.";
+      }
+      {
+        title = "Loki log ingestion";
+        unit = "ops";
+        targets = [(target ''sum(rate(loki_distributor_lines_received_total[$__rate_interval]))'' "lines/s")];
+      }
+      {
+        title = "Dropped log entries";
+        unit = "ops";
+        targets = [(target ''sum by(job,instance) (rate(loki_write_dropped_entries_total[$__rate_interval]))'' "{{job}} / {{instance}}")];
+        description = "Entries abandoned after delivery retries. Missing counters are Unknown, not proof that no logs were lost.";
+      }
+      {
+        title = "Monitoring memory";
+        unit = "bytes";
+        targets = [(target ''process_resident_memory_bytes{job=~"prometheus|loki|alloy-host|alloy-kubernetes"}'' "{{job}} / {{instance}}")];
+      }
+      {
+        title = "Host log heartbeats in the last five minutes";
+        type = "stat";
+        datasource = loki;
+        targets = [(target ''sum(count_over_time({cluster="sinnoh",job="systemd-journal",host="canalave",unit="observability-canary.service"} |= "observability_canary" [5m])) or vector(0)'' "canalave") (target ''sum(count_over_time({cluster="sinnoh",job="systemd-journal",host="sunnyshore",unit="observability-canary.service"} |= "observability_canary" [5m])) or vector(0)'' "sunnyshore")];
+        description = "Each configured host emits one heartbeat per minute. Zero means none arrived in five minutes; a query failure remains Unknown.";
+      }
+      {
+        title = "Log coverage by source";
+        datasource = loki;
+        unit = "ops";
+        targets = [(target ''sum by(job) (rate({cluster="sinnoh"}[$__rate_interval]))'' "{{job}}")];
+      }
+      {
+        title = "Node textfile collection errors";
+        type = "stat";
+        targets = [(target ''node_textfile_scrape_error{job="node",instance=~"$node"}'' "{{instance}}")];
+      }
+      {
+        title = "Application and host logs";
+        type = "logs";
+        datasource = loki;
+        targets = [(target ''{cluster="sinnoh",job!="kubernetes-events",node=~"$node",namespace=~"$namespace"}'' "")];
+        description = "Select a node or namespace to narrow the investigation. Host journals have no namespace.";
+      }
+      {
+        title = "Kubernetes warning events";
+        type = "logs";
+        datasource = loki;
+        targets = [(target ''{cluster="sinnoh",job="kubernetes-events",namespace=~"$namespace"} | json | type="Warning"'' "")];
+      }
+    ];
   in {
     services.grafana.provision.dashboards.settings.providers = [
       {
@@ -729,7 +796,7 @@ _: {
         options.path = pkgs.linkFarm "sinnoh-dashboards" (map (item: {
           name = "${item.uid}.json";
           path = pkgs.writeText "${item.uid}.json" (builtins.toJSON item);
-        }) [overview traffic workloads backups]);
+        }) [overview traffic workloads backups reporting]);
       }
     ];
   };
