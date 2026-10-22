@@ -15,6 +15,9 @@ spec:
       labels:
         app: haunt
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       automountServiceAccountToken: false
       enableServiceLinks: false
       topologySpreadConstraints:
@@ -27,6 +30,11 @@ spec:
               app: haunt
       containers:
         - name: haunt
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - NET_RAW
           image: ghcr.io/alyraffauf/haunt:latest@sha256:239456ca95f4b45662b0bc44754200a8ad25bbd2d90d65f269838145c9c534d4
           ports:
             - name: http
