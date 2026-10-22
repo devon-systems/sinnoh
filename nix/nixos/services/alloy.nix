@@ -81,6 +81,10 @@ _: {
         discovery.relabel "alloy_self" {
           targets = prometheus.exporter.self.host.targets
           rule {
+            target_label = "job"
+            replacement = "alloy-host"
+          }
+          rule {
             target_label = "instance"
             replacement = "${config.networking.hostName}"
           }

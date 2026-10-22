@@ -141,8 +141,15 @@ spec:
           }
 
           prometheus.exporter.self "cluster" {}
-          prometheus.scrape "alloy_self" {
+          discovery.relabel "alloy_self" {
             targets = prometheus.exporter.self.cluster.targets
+            rule {
+              target_label = "job"
+              replacement = "alloy-kubernetes"
+            }
+          }
+          prometheus.scrape "alloy_self" {
+            targets = discovery.relabel.alloy_self.output
             job_name = "alloy-kubernetes"
             forward_to = [prometheus.remote_write.sinnoh.receiver]
           }
