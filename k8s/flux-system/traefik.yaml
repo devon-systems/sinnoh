@@ -5,6 +5,7 @@ metadata:
   namespace: flux-system
 spec:
   interval: 10m
+  retryInterval: 1m
   path: ./k8s/traefik
   prune: true
   sourceRef:
@@ -13,3 +14,4 @@ spec:
   dependsOn:
     - name: cert-manager
   wait: true
+  timeout: 10m

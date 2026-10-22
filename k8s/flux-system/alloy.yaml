@@ -4,7 +4,10 @@ metadata:
   name: alloy
   namespace: flux-system
 spec:
+  dependsOn:
+    - name: namespaces
   interval: 10m
+  retryInterval: 1m
   path: ./k8s/alloy
   prune: true
   sourceRef:

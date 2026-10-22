@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - alloy-system.yaml
+  - aly-codes.yaml
+  - aly-town.yaml
+  - atbbs.yaml
+  - bobbin.yaml
+  - cert-manager.yaml
+  - cnpg-system.yaml
+  - haunt.yaml
+  - morgan.yaml
+  - morsels.yaml
+  - skytrace.yaml
+  - slingshot.yaml
+  - snrld.yaml
+  - switchyard.yaml
+  - tranquil-pds.yaml
+  - vaultwarden.yaml

@@ -5,10 +5,11 @@ metadata:
   namespace: flux-system
 spec:
   interval: 10m
+  retryInterval: 1m
   path: ./k8s/tailscale-dns
   prune: true
   sourceRef:
     kind: GitRepository
     name: flux-system
-  timeout: 5m
+  timeout: 10m
   wait: true

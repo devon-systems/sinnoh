@@ -6,6 +6,7 @@ resources:
   - cert-manager.yaml
   - cnpg.yaml
   - barman-cloud.yaml
+  - namespaces.yaml
   - secrets.yaml
   - postgres-backups.yaml
   - postgres.yaml

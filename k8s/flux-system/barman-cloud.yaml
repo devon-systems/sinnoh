@@ -8,6 +8,7 @@ spec:
     - name: cert-manager
     - name: cnpg
   interval: 10m
+  retryInterval: 1m
   path: ./k8s/barman-cloud
   prune: true
   sourceRef:

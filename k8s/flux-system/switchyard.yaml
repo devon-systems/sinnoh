@@ -4,11 +4,14 @@ metadata:
   name: switchyard
   namespace: flux-system
 spec:
+  dependsOn:
+    - name: namespaces
   interval: 10m
+  retryInterval: 1m
   path: ./k8s/switchyard
   prune: false
   sourceRef:
     kind: GitRepository
     name: flux-system
-  timeout: 5m
+  timeout: 10m
   wait: true

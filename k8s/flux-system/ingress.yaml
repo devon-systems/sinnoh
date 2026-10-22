@@ -6,8 +6,11 @@ metadata:
 spec:
   dependsOn:
     - name: letsencrypt
+    - name: traefik
   interval: 10m
+  retryInterval: 1m
   path: ./k8s/ingress
   prune: true
   sourceRef: { kind: GitRepository, name: flux-system }
   wait: true
+  timeout: 10m
