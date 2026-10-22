@@ -17,6 +17,9 @@ spec:
     spec:
       automountServiceAccountToken: false
       enableServiceLinks: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       topologySpreadConstraints:
         - maxSkew: 1
           minDomains: 2
@@ -29,6 +32,11 @@ spec:
               app: atbbs-web
       containers:
         - name: atbbs-web
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - NET_RAW
           image: ghcr.io/alyraffauf/atbbs:latest@sha256:054b4bf66a9e8d00f43fa24bf557c92e2356b869ca038a491fa818297386ee8d
           env:
             - name: PUBLIC_URL
