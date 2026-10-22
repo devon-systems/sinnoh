@@ -15,6 +15,9 @@ spec:
       labels:
         app: switchyard
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       automountServiceAccountToken: false
       enableServiceLinks: false
       topologySpreadConstraints:
@@ -27,6 +30,11 @@ spec:
               app: switchyard
       containers:
         - name: switchyard
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - NET_RAW
           image: ghcr.io/alyraffauf/switchyard-website:latest@sha256:2c35efabdedab518c13580f101197af973ae4e158c63b68fdd4e13f0fe9de4d6
           ports:
             - name: http
