@@ -6,7 +6,7 @@ metadata:
 spec:
   interval: 10m
   path: ./k8s/haunt
-  prune: true
+  prune: false
   sourceRef:
     kind: GitRepository
     name: flux-system
