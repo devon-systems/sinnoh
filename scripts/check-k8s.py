@@ -443,6 +443,7 @@ def main():
         render_charts(root, targets, temporary, args.kubernetes_version)
         namespaces, secrets = check_ownership(targets)
         check_prerequisites(targets, ancestors, namespaces, secrets)
+        check_security(targets)
         validate_schemas(targets, temporary, args.kubernetes_version)
 
 
