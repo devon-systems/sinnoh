@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: morgan
+  namespace: morgan
+spec:
+  podSelector:
+    matchLabels:
+      app: morgan
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
+      ports:
+        - protocol: TCP
+          port: 80
+  egress: []

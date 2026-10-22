@@ -4,6 +4,7 @@ namespace: haunt
 resources:
   - namespace.yaml
   - workload.yaml
+  - network-policy.yaml
 patches:
   - target:
       kind: Deployment

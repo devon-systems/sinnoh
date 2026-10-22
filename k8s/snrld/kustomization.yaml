@@ -4,6 +4,7 @@ namespace: snrld
 resources:
   - namespace.yaml
   - workload.yaml
+  - network-policy.yaml
 patches:
   - target:
       kind: Deployment
