@@ -35,7 +35,7 @@ spec:
             capabilities:
               drop:
                 - NET_RAW
-          image: ghcr.io/alyraffauf/snrld:latest@sha256:032c43ec209f14b8ccc11d6c831c175b07980d5e01b627d4dc61c4ddf77c4746
+          image: ghcr.io/alyraffauf/snrld:latest@sha256:6ada188f1bf82fbc2c1dcea00f9d9824496e3314c5180b510bb81607435310e9
           env:
             - name: PUBLIC_URL
               value: https://snarled.at

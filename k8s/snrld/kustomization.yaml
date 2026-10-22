@@ -4,7 +4,7 @@ namespace: snrld
 resources:
   - network-policy.yaml
   - namespace.yaml
-  - workload.yaml # snarled.at public URL and OAuth client metadata.
+  - workload.yaml # Image from 4514da8, snarled.at public URL, and OAuth client metadata.
 patches:
   - target:
       kind: Deployment
