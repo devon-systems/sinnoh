@@ -19,12 +19,15 @@ The eight Nginx sites accept HTTP only from Traefik and have no outbound
 access. The ATBBS telnet server accepts port `2323` from Traefik and can make
 public web requests.
 
-Bobbin, Slingshot, Morsels, Pacifico, and Tranquil PDS allow DNS and public
+Bobbin, Morsels, Pacifico, and Tranquil PDS allow DNS and public
 web requests. Bobbin can also reach Slingshot on port `8080`. Tranquil PDS
 can reach its Valkey on port `6379`, the shared PostgreSQL cluster on port
 `5432`, and public SMTP on port `2465`. Alloy can reach Slingshot metrics on
 port `8765` and Tranquil PDS metrics on port `3000`. Vaultwarden retains its
 existing ingress and outbound restrictions.
+
+Slingshot has no NetworkPolicy. It needs to fetch records and identities
+from PDSes on cluster public ingress addresses, including `aly.social`.
 
 Public outbound rules exclude private, tailnet, link-local, reserved, and
 cluster public ingress addresses. Standard NetworkPolicy cannot select
