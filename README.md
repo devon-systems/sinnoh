@@ -19,6 +19,9 @@ interface. Flux watches the `master` branch and reconciles the application,
 networking, certificate, database, backup, and secret resources composed by
 `k8s/flux-system/`.
 
+See the shared [observability runbook](https://github.com/devon-systems/infra/blob/master/docs/observability.md)
+to check metrics and logs or troubleshoot missing data.
+
 ## Repository layout
 
 ```text
