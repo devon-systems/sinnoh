@@ -5,34 +5,50 @@ _: {
     pkgs,
     ...
   }: let
-    jobs = builtins.attrNames config.services.restic.backups;
     directory = "/var/lib/sinnoh-backup-metrics";
+    jobs = builtins.attrNames config.services.restic.backups;
     reporter = pkgs.writeShellApplication {
       name = "sinnoh-backup-metrics";
       runtimeInputs = [pkgs.python3 pkgs.systemd pkgs.coreutils];
       text = ''exec python3 ${../../../scripts/backup-metrics.py} "$@"'';
     };
+    command = "${lib.getExe reporter} --directory ${directory}";
   in {
     services.prometheus.exporters.node = {
       enabledCollectors = ["textfile"];
       extraFlags = ["--collector.textfile.directory=${directory}"];
     };
     systemd.tmpfiles.rules = ["d ${directory} 0755 root root -"];
-    systemd.services =
-      lib.listToAttrs (map (job: {
-          name = "restic-backups-${job}";
-          value.serviceConfig.ExecStopPost = lib.mkAfter ["-${lib.getExe reporter} ${lib.escapeShellArg job}"];
+
+    systemd.services = lib.mkMerge [
+      (lib.mapAttrs' (job: _:
+        lib.nameValuePair "restic-backups-${job}" {
+          onSuccess = ["sinnoh-backup-metrics-${job}.service"];
+          onFailure = ["sinnoh-backup-metrics-${job}.service"];
+          serviceConfig.ExecStartPre = lib.mkBefore ["-${command} --start ${lib.escapeShellArg job}"];
         })
-        jobs)
-      // {
+      config.services.restic.backups)
+      (lib.listToAttrs (map (job:
+        lib.nameValuePair "sinnoh-backup-metrics-${job}" {
+          description = "Publish completed backup result for ${job}";
+          serviceConfig = {
+            Type = "oneshot";
+            ExecStart = "${command} ${lib.escapeShellArg job}";
+          };
+        })
+      jobs))
+      {
         sinnoh-backup-metrics-seed = {
-          description = "Seed backup reporting from completed systemd results";
+          description = "Initialize backup inventory and recover interrupted results";
           wantedBy = ["multi-user.target"];
           after = ["systemd-tmpfiles-setup.service"];
-          before = map (job: "restic-backups-${job}.service") jobs;
-          serviceConfig.Type = "oneshot";
-          script = lib.concatMapStringsSep "\n" (job: "${lib.getExe reporter} --seed ${lib.escapeShellArg job}") jobs;
+          before = ["alloy.service"] ++ map (job: "restic-backups-${job}.service") jobs;
+          serviceConfig = {
+            Type = "oneshot";
+            ExecStart = "${command} --seed ${lib.escapeShellArgs jobs}";
+          };
         };
-      };
+      }
+    ];
   };
 }
