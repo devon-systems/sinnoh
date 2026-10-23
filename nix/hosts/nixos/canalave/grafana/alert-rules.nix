@@ -87,7 +87,7 @@ _: {
                 })
                 (alert {
                   name = "HostBackupFailed";
-                  expr = ''sinnoh_backup_last_run_success{job="node"} == 0'';
+                  expr = ''restic_backup_last_run_success{job="node"} == 0'';
                   duration = "5m";
                   severity = "warning";
                   summary = "A host backup failed";
@@ -95,7 +95,7 @@ _: {
                 })
                 (alert {
                   name = "HostBackupOverdue";
-                  expr = ''time() - (sinnoh_backup_last_success_timestamp_seconds{job="node"} > 0) > 48 * 60 * 60'';
+                  expr = ''time() - (restic_backup_last_success_timestamp_seconds{job="node"} > 0) > 48 * 60 * 60'';
                   duration = "15m";
                   severity = "critical";
                   summary = "A host backup is overdue";
@@ -104,9 +104,9 @@ _: {
                 (alert {
                   name = "HostBackupSuccessMissing";
                   expr = ''
-                    sinnoh_backup_job_info{job="node"}
+                    restic_backup_job_info{job="node"}
                     unless on (instance, backup)
-                    (sinnoh_backup_last_success_timestamp_seconds{job="node"} > 0)
+                    (restic_backup_last_success_timestamp_seconds{job="node"} > 0)
                   '';
                   duration = "48h";
                   severity = "warning";
@@ -143,14 +143,14 @@ _: {
                 (alert {
                   name = "FluxReconciliationFailed";
                   expr = ''
-                    max by (namespace, name, customresource_kind) (
+                    max by (exported_namespace, name, customresource_kind) (
                       gotk_resource_info{job="kube-state-metrics",ready!="True",suspended!="true",source_type!="oci"}
                     ) == 1
                   '';
                   duration = "15m";
                   severity = "warning";
                   summary = "A Flux resource is not ready";
-                  description = "{{ $labels.customresource_kind }} {{ $labels.namespace }}/{{ $labels.name }} has stayed unready for 15 minutes. Check its conditions and Flux events.";
+                  description = "{{ $labels.customresource_kind }} {{ $labels.exported_namespace }}/{{ $labels.name }} has stayed unready for 15 minutes. Check its conditions and Flux events.";
                 })
                 (alert {
                   name = "FluxTelemetryMissing";

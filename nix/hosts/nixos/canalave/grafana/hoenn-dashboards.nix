@@ -12,10 +12,11 @@ _: {
       type = "loki";
       uid = "hoenn-loki";
     };
-    node = ''job="node",host=~"$host"'';
-    smartctl = ''job="smartctl",host=~"$host",device=~"$drive"'';
-    backup = ''job="node",host=~"$host",backup=~"$backup"'';
-    btrfs = ''job="node",host=~"$host",filesystem=~"$filesystem"'';
+    target = expr: legendFormat: {inherit expr legendFormat;};
+    node = ''job="node",instance=~"$host"'';
+    smartctl = ''job="smartctl",instance=~"$host",device=~"$drive"'';
+    backup = ''job="node",instance=~"$host",backup=~"$backup"'';
+    btrfs = ''job="node",instance=~"$host",filesystem=~"$filesystem"'';
     btrfsAvailable = ''and on (host) (hoenn_btrfs_collector_success{${node}} == 1 and (time() - hoenn_btrfs_collector_last_run_timestamp_seconds{${node}} < 900))'';
     panel = index: specification: {
       id = index + 1;
@@ -29,14 +30,23 @@ _: {
         w = 12;
         h = 8;
       };
-      targets = [
+      transformations = specification.transformations or [];
+      targets = lib.imap0 (index: query:
+        query
+        // {
+          refId = toString index;
+          format =
+            if (specification.type or "") == "table"
+            then "table"
+            else "time_series";
+          instant = (specification.type or "") == "table";
+          range = (specification.type or "") != "table";
+        }) (specification.targets or [
         {
-          refId = "A";
           inherit (specification) expr;
           legendFormat = specification.legend or "{{host}}";
-          range = true;
         }
-      ];
+      ]);
       fieldConfig.defaults = {
         unit = specification.unit or "short";
         noValue = "Unknown";
@@ -78,7 +88,7 @@ _: {
           label = "Host";
           type = "query";
           datasource = prometheus;
-          query = ''label_values(up{job="node"}, host)'';
+          query = ''label_values(up{job="node"}, instance)'';
           refresh = 2;
           sort = 1;
           multi = true;
@@ -306,7 +316,7 @@ _: {
             {
               name = "backup";
               label = "Backup";
-              query = ''label_values(hoenn_backup_job_info{host=~"$host"}, backup)'';
+              query = ''label_values(restic_backup_job_info{instance=~"$host"}, backup)'';
             }
             {
               name = "filesystem";
@@ -317,26 +327,26 @@ _: {
         panels = lib.imap0 panel [
           {
             title = "Configured backup jobs";
-            expr = ''sum by (host) (hoenn_backup_job_info{${backup}})'';
+            expr = ''sum by (host) (restic_backup_job_info{${backup}})'';
             description = "Scheduled system and user Restic jobs registered for reporting.";
           }
           {
             title = "Last completed backup succeeded";
-            expr = ''hoenn_backup_last_run_success{${backup}}'';
+            expr = ''restic_backup_last_run_success{${backup}}'';
             legend = "{{host}} {{scope}}/{{owner}} {{backup}}";
             unit = "bool";
             description = "Result of the complete systemd backup job, including preparation, pruning, checks, and cleanup. Unknown until the first reported completion.";
           }
           {
             title = "Time since successful backup";
-            expr = ''time() - hoenn_backup_last_success_timestamp_seconds{${backup}}'';
+            expr = ''time() - restic_backup_last_success_timestamp_seconds{${backup}}'';
             legend = "{{host}} {{scope}}/{{owner}} {{backup}}";
             unit = "s";
             description = "A failed job preserves the previous successful completion time. Unknown means no successful completion has been observed.";
           }
           {
             title = "Time since backup completion";
-            expr = ''time() - hoenn_backup_last_completion_timestamp_seconds{${backup}}'';
+            expr = ''time() - restic_backup_last_completion_timestamp_seconds{${backup}}'';
             legend = "{{host}} {{scope}}/{{owner}} {{backup}}";
             unit = "s";
           }
@@ -402,6 +412,135 @@ _: {
           }
         ];
       };
+    variable = name: query: {
+      inherit name query;
+      type = "query";
+      datasource = prometheus;
+      refresh = 2;
+      sort = 1;
+      multi = true;
+      includeAll = true;
+      allValue = ".*";
+      current = {
+        text = "All";
+        value = "$__all";
+      };
+    };
+    kubernetes =
+      dashboard
+      // {
+        uid = "hoenn-kubernetes-workloads";
+        title = "Kubernetes workloads";
+        refresh = "30s";
+        templating.list = [
+          (variable "node" ''label_values(kube_node_info{job="kube-state-metrics"}, node)'')
+          (variable "namespace" ''label_values(pod_workload_info{node=~"$node"}, namespace)'')
+          (variable "pod" ''label_values(pod_workload_info{node=~"$node",namespace=~"$namespace"}, pod)'')
+        ];
+        panels = lib.imap0 panel ([
+            {
+              title = "Collector scrape health";
+              expr = ''up{job=~"cadvisor|kube-state-metrics|flux"}'';
+              legend = "{{job}} {{instance}}";
+              unit = "bool";
+            }
+            {
+              title = "Pod placement";
+              type = "table";
+              expr = ''pod_workload_info{node=~"$node",namespace=~"$namespace",pod=~"$pod"}'';
+              transformations = [
+                {
+                  id = "filterFieldsByName";
+                  options.include.names = ["namespace" "workload" "pod" "node"];
+                }
+              ];
+            }
+            {
+              title = "Container CPU consumption";
+              expr = ''sum by (namespace, pod, container) (rate(container_cpu_usage_seconds_total{job="cadvisor",container!="",container!="POD",namespace=~"$namespace",pod=~"$pod",node=~"$node"}[$__rate_interval]))'';
+              legend = "{{namespace}} {{pod}} {{container}}";
+              unit = "cores";
+            }
+            {
+              title = "Container memory working set";
+              expr = ''container_memory_working_set_bytes{job="cadvisor",container!="",container!="POD",namespace=~"$namespace",pod=~"$pod",node=~"$node"}'';
+              legend = "{{namespace}} {{pod}} {{container}}";
+              unit = "bytes";
+            }
+            {
+              title = "Container restarts in selected range";
+              expr = ''increase(kube_pod_container_status_restarts_total{job="kube-state-metrics",namespace=~"$namespace",pod=~"$pod"}[$__range])'';
+              legend = "{{namespace}} {{pod}} {{container}}";
+            }
+            {
+              title = "Active container readiness";
+              expr = ''kube_pod_container_status_ready{job="kube-state-metrics",namespace=~"$namespace",pod=~"$pod"} and on (namespace,pod) (kube_pod_status_phase{job="kube-state-metrics",phase=~"Running|Pending|Unknown"} == 1)'';
+              legend = "{{namespace}} {{pod}} {{container}}";
+              unit = "bool";
+            }
+            {
+              title = "Deployment replicas";
+              targets = [(target ''kube_deployment_spec_replicas{job="kube-state-metrics",namespace=~"$namespace"}'' "{{namespace}} {{deployment}} desired") (target ''kube_deployment_status_replicas_available{job="kube-state-metrics",namespace=~"$namespace"}'' "{{namespace}} {{deployment}} available")];
+            }
+            {
+              title = "Pod logs";
+              type = "logs";
+              datasource = loki;
+              expr = ''{cluster="hoenn",job!="kubernetes-events",namespace=~"$namespace",pod=~"$pod",node=~"$node"}'';
+            }
+            {
+              title = "Kubernetes warning events";
+              type = "logs";
+              datasource = loki;
+              expr = ''{cluster="hoenn",job="kubernetes-events",namespace=~"$namespace"} | json | type="Warning"'';
+            }
+          ]
+          ++ (import ./_flux-panels.nix {inherit target;}));
+      };
+    reporting =
+      dashboard
+      // {
+        uid = "hoenn-reporting-health";
+        title = "Reporting health";
+        panels = lib.imap0 panel [
+          {
+            title = "Monitoring scrape health";
+            expr = ''up{job=~"prometheus|loki|alloy-host|alloy-kubernetes",instance=~"$host|alloy"}'';
+            legend = "{{job}} {{instance}}";
+            unit = "bool";
+          }
+          {
+            title = "Queued metric samples";
+            expr = ''prometheus_remote_storage_samples_pending{job=~"alloy-host|alloy-kubernetes",instance=~"$host|alloy"}'';
+            legend = "{{job}} {{instance}}";
+          }
+          {
+            title = "Failed metric deliveries";
+            expr = ''sum by (job,instance) (rate(prometheus_remote_storage_samples_failed_total{job=~"alloy-host|alloy-kubernetes",instance=~"$host|alloy"}[$__rate_interval]))'';
+            legend = "{{job}} {{instance}}";
+            unit = "ops";
+          }
+          {
+            title = "Dropped log entries";
+            expr = ''sum by (job,instance) (rate(loki_write_dropped_entries_total{job=~"alloy-host|alloy-kubernetes",instance=~"$host|alloy"}[$__rate_interval]))'';
+            legend = "{{job}} {{instance}}";
+            unit = "ops";
+          }
+          {
+            title = "Host log heartbeats in the last five minutes";
+            datasource = loki;
+            expr = ''sum by (host) (count_over_time({cluster="hoenn",service="observability-canary",host=~"$host"} |= "observability_canary" [5m]))'';
+            description = "Each awake host emits one heartbeat per minute. Missing heartbeats can mean the host is asleep or log delivery has stopped.";
+          }
+          {
+            title = "Log coverage by source";
+            datasource = loki;
+            expr = ''sum by (job) (rate({cluster="hoenn"}[$__rate_interval]))'';
+            legend = "{{job}}";
+            unit = "ops";
+          }
+        ];
+      };
   in {
     services.grafana.provision.dashboards.settings.providers = [
       {
@@ -410,7 +549,7 @@ _: {
         options.path = pkgs.linkFarm "hoenn-dashboards" (map (item: {
           name = "${item.uid}.json";
           path = pkgs.writeText "${item.uid}.json" (builtins.toJSON item);
-        }) [dashboard driveHealth dataProtection]);
+        }) [dashboard driveHealth dataProtection kubernetes reporting]);
       }
     ];
   };

@@ -34,20 +34,20 @@ tests:
       - series: 'kube_pod_container_resource_limits{job="kube-state-metrics",namespace="web",pod="web-a",container="web",resource="cpu"}'
         values: "2+0x10"
     promql_expr_test:
-      - expr: "count(sinnoh_pod_workload_info)"
+      - expr: "count(pod_workload_info)"
         eval_time: 5m
         exp_samples:
           - labels: "{}"
             value: 4
-      - expr: 'sum by (workload, workload_kind) (sinnoh_pod_workload_info{namespace="web"})'
+      - expr: 'sum by (workload, workload_kind) (pod_workload_info{namespace="web"})'
         eval_time: 5m
         exp_samples:
           - labels: '{workload="web",workload_kind="Deployment"}'
             value: 2
-      - expr: 'sinnoh_pod_workload_info{namespace="tools"}'
+      - expr: 'pod_workload_info{namespace="tools"}'
         eval_time: 5m
         exp_samples:
-          - labels: '{__name__="sinnoh_pod_workload_info",namespace="tools",pod="debug",node="canalave",workload="debug",workload_kind="Pod"}'
+          - labels: '{__name__="pod_workload_info",namespace="tools",pod="debug",node="canalave",workload="debug",workload_kind="Pod"}'
             value: 1
       - expr: 'sum(rate(container_cpu_usage_seconds_total{job="cadvisor",container!="",container!="POD",image!=""}[2m]))'
         eval_time: 2m30s

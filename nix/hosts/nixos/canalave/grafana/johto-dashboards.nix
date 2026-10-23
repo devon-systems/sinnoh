@@ -295,17 +295,17 @@ _: {
         ];
       }
     ];
-    selectedPods = ''johto_pod_workload_info{node=~"$node",namespace=~"$namespace",workload=~"$workload",pod=~"$pod"}'';
+    selectedPods = ''pod_workload_info{node=~"$node",namespace=~"$namespace",workload=~"$workload",pod=~"$pod"}'';
     container = ''job="cadvisor",container!="",container!="POD",image!="",namespace=~"$namespace",pod=~"$pod",node=~"$node"'';
     joinPods = expression: "(${expression}) * on (namespace, pod) group_left(workload, workload_kind) ${selectedPods}";
     kubeContainer = ''job="kube-state-metrics",namespace=~"$namespace",pod=~"$pod"'';
-    workloadVariable = variable "workload" ''label_values(johto_pod_workload_info{node=~"$node",namespace=~"$namespace"}, workload)'';
+    workloadVariable = variable "workload" ''label_values(pod_workload_info{node=~"$node",namespace=~"$namespace"}, workload)'';
     workloads =
       dashboard "johto-kubernetes-workloads" "Kubernetes workloads" [
         (variable "node" ''label_values(kube_node_info{job="kube-state-metrics"}, node)'')
-        (variable "namespace" ''label_values(johto_pod_workload_info{node=~"$node"}, namespace)'')
+        (variable "namespace" ''label_values(pod_workload_info{node=~"$node"}, namespace)'')
         workloadVariable
-        (variable "pod" ''label_values(johto_pod_workload_info{node=~"$node",namespace=~"$namespace",workload=~"$workload"}, pod)'')
+        (variable "pod" ''label_values(pod_workload_info{node=~"$node",namespace=~"$namespace",workload=~"$workload"}, pod)'')
       ] ([
           {
             title = "Collector scrape health";
@@ -454,65 +454,8 @@ _: {
             targets = [(target ''kube_cronjob_status_last_successful_time{job="kube-state-metrics",namespace=~"$namespace"} * 1000'' "{{namespace}} / {{cronjob}}")];
             description = "Namespace-wide CronJobs, including those with no current pods. Missing completion remains Unknown.";
           }
-
-          {
-            title = "Flux readiness";
-            type = "table";
-            transformations = [
-              {
-                id = "filterFieldsByName";
-                options.include.names = ["customresource_kind" "exported_namespace" "name" "ready"];
-              }
-            ];
-            unit = "short";
-            targets = [(target ''gotk_resource_info{job="kube-state-metrics",exported_namespace=~"$namespace"}'' "{{customresource_kind}} {{name}} {{controller}}")];
-            description = "Flux panels follow namespace only. Readiness and suspension come from resource state; missing state remains Unknown.";
-          }
-
-          {
-            title = "Flux suspension";
-            type = "table";
-            transformations = [
-              {
-                id = "filterFieldsByName";
-                options.include.names = ["customresource_kind" "exported_namespace" "name" "suspended"];
-              }
-            ];
-            unit = "short";
-            targets = [(target ''label_replace(gotk_resource_info{job="kube-state-metrics",exported_namespace=~"$namespace",suspended=""}, "suspended", "false", "suspended", ".*") or gotk_resource_info{job="kube-state-metrics",exported_namespace=~"$namespace",suspended!=""}'' "{{customresource_kind}} {{name}} {{controller}}")];
-            description = "Flux panels follow namespace only. Readiness and suspension come from resource state; missing state remains Unknown.";
-          }
-
-          {
-            title = "Flux pending generations";
-            type = "table";
-            transformations = [
-              {
-                id = "filterFieldsByName";
-                options.include.names = ["customresource_kind" "exported_namespace" "name" "Value"];
-              }
-            ];
-            unit = "short";
-            targets = [(target ''clamp_min(gotk_resource_generation{job="kube-state-metrics",exported_namespace=~"$namespace"} - gotk_resource_observed_generation{job="kube-state-metrics",exported_namespace=~"$namespace"}, 0)'' "{{customresource_kind}} {{name}} {{controller}}")];
-            description = "Flux panels follow namespace only. Readiness and suspension come from resource state; missing state remains Unknown.";
-          }
-
-          {
-            title = "Flux reconciliation failures";
-            type = "timeseries";
-            unit = "short";
-            targets = [(target ''sum by (controller) (increase(controller_runtime_reconcile_total{job="flux",result="error"}[$__range]))'' "{{customresource_kind}} {{name}} {{controller}}")];
-            description = "Flux panels follow namespace only. Readiness and suspension come from resource state; missing state remains Unknown.";
-          }
-
-          {
-            title = "Flux reconciliation duration p95";
-            type = "timeseries";
-            unit = "s";
-            targets = [(target ''histogram_quantile(0.95, sum by (le,kind,name,namespace) (rate(gotk_reconcile_duration_seconds_bucket{job="flux",namespace=~"$namespace"}[$__rate_interval])))'' "{{customresource_kind}} {{name}} {{controller}}")];
-            description = "Flux panels follow namespace only. Readiness and suspension come from resource state; missing state remains Unknown.";
-          }
-        ]);
+        ]
+        ++ (import ./_flux-panels.nix {inherit target;}));
     pg = ''job="pg-shared"'';
     backup = ''job="node",instance=~"$node"'';
     backupAge = [
@@ -629,7 +572,7 @@ _: {
             desc = false;
           }
         ];
-        targets = [(target ''johto_backup_job_info{${backup}}'' "{{instance}} / {{backup}}")];
+        targets = [(target ''restic_backup_job_info{${backup}}'' "{{instance}} / {{backup}}")];
         description = "Derived from every configured restic job. Includes all 16 configured Goldenrod and Olivine jobs.";
       }
       {
@@ -656,7 +599,7 @@ _: {
         ];
         unit = "s";
         thresholds = backupAge;
-        targets = [(target ''time() - johto_backup_last_success_timestamp_seconds{${backup}}'' "{{instance}} / {{backup}}")];
+        targets = [(target ''time() - restic_backup_last_success_timestamp_seconds{${backup}}'' "{{instance}} / {{backup}}")];
         description = "Warning after 28 hours, critical after 48 hours. Unknown until a successful completion is observed or seeded from systemd.";
       }
       {
@@ -674,7 +617,7 @@ _: {
             desc = false;
           }
         ];
-        targets = [(target ''johto_backup_last_run_success{${backup}}'' "{{instance}} / {{backup}}")];
+        targets = [(target ''restic_backup_last_run_success{${backup}}'' "{{instance}} / {{backup}}")];
         mappings = [
           {
             type = "value";
@@ -708,7 +651,7 @@ _: {
           }
         ];
         unit = "dateTimeAsIso";
-        targets = [(target ''johto_backup_last_completion_timestamp_seconds{${backup}} * 1000'' "{{instance}} / {{backup}}")];
+        targets = [(target ''restic_backup_last_completion_timestamp_seconds{${backup}} * 1000'' "{{instance}} / {{backup}}")];
       }
       {
         title = "Host backup last success";
@@ -726,7 +669,7 @@ _: {
           }
         ];
         unit = "dateTimeAsIso";
-        targets = [(target ''johto_backup_last_success_timestamp_seconds{${backup}} * 1000'' "{{instance}} / {{backup}}")];
+        targets = [(target ''restic_backup_last_success_timestamp_seconds{${backup}} * 1000'' "{{instance}} / {{backup}}")];
       }
 
       {
@@ -803,7 +746,7 @@ _: {
         title = "Immich offsite backup age";
         type = "stat";
         unit = "s";
-        targets = [(target ''time() - johto_backup_last_success_timestamp_seconds{job="node",instance="goldenrod",backup="immich"}'' "{{datname}} {{mode}}")];
+        targets = [(target ''time() - restic_backup_last_success_timestamp_seconds{job="node",instance="goldenrod",backup="immich"}'' "{{datname}} {{mode}}")];
         description = "Immich uses database-dump recovery. Files are backed up after the database dump while applications remain online; there is no WAL recovery window.";
         thresholds = backupAge;
       }

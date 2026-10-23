@@ -56,6 +56,21 @@ spec:
           - name: data
             persistentVolumeClaim:
               claimName: alloy-data
+    rbac:
+      rules:
+        - apiGroups: [""]
+          resources: [pods, namespaces, events]
+          verbs: [get, list, watch]
+        - apiGroups: [""]
+          resources: [pods/log]
+          verbs: [get]
+      clusterRules:
+        - apiGroups: [""]
+          resources: [nodes]
+          verbs: [get, list, watch]
+        - apiGroups: [""]
+          resources: [nodes/metrics]
+          verbs: [get]
     crds:
       create: false
     image:

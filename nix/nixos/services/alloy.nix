@@ -61,14 +61,19 @@ _: {
 
           rule {
             source_labels = ["__journal__systemd_unit"]
-            regex         = "comin[.]service"
+            regex         = "(comin|observability-canary)[.]service"
             target_label  = "service"
-            replacement   = "comin"
+            replacement   = "$1"
           }
 
           rule {
             source_labels = ["__journal__systemd_user_unit"]
             target_label  = "user_unit"
+          }
+
+          rule {
+            source_labels = ["__journal_priority_keyword"]
+            target_label = "level"
           }
         }
 
@@ -81,6 +86,7 @@ _: {
             host = "${config.networking.hostName}",
             node = "${config.networking.hostName}",
             cluster = "sinnoh",
+            os = "linux",
           }
         }
 
@@ -109,6 +115,7 @@ _: {
         }
 
         prometheus.remote_write "comin" {
+          external_labels = {cluster = "sinnoh"}
           endpoint {
             url = "http://canalave.sinnoh:3020/api/v1/write"
           }

@@ -81,6 +81,10 @@ discovery.relabel "cadvisor" {
     source_labels = ["__meta_kubernetes_node_name"]
     target_label = "node"
   }
+  rule {
+    source_labels = ["__meta_kubernetes_node_name"]
+    target_label = "instance"
+  }
 }
 
 prometheus.scrape "cadvisor" {
@@ -114,10 +118,15 @@ discovery.relabel "alloy_self" {
     target_label = "job"
     replacement = "alloy-kubernetes"
   }
+  rule {
+    target_label = "instance"
+    replacement = "alloy"
+  }
 }
 prometheus.scrape "alloy_self" {
   targets = discovery.relabel.alloy_self.output
   job_name = "alloy-kubernetes"
+  scrape_interval = "30s"
   forward_to = [prometheus.remote_write.sinnoh.receiver]
 }
 
@@ -162,6 +171,10 @@ discovery.relabel "postgres" {
   rule {
     source_labels = ["__meta_kubernetes_namespace"]
     target_label = "namespace"
+  }
+  rule {
+    source_labels = ["__meta_kubernetes_pod_name"]
+    target_label = "instance"
   }
 }
 
@@ -319,5 +332,58 @@ loki.process "redact" {
 loki.write "sinnoh" {
   endpoint {
     url = "http://10.254.0.3:3030/loki/api/v1/push"
+  }
+}
+
+discovery.kubernetes "flux" {
+  role = "pod"
+  namespaces {
+    names = ["flux-system"]
+  }
+}
+
+discovery.relabel "flux" {
+  targets = discovery.kubernetes.flux.targets
+  rule {
+    source_labels = ["__meta_kubernetes_pod_container_port_name"]
+    regex = "http-prom"
+    action = "keep"
+  }
+  rule {
+    source_labels = ["__meta_kubernetes_pod_phase"]
+    regex = "Running"
+    action = "keep"
+  }
+  rule {
+    source_labels = ["__meta_kubernetes_pod_name"]
+    target_label = "pod"
+  }
+  rule {
+    source_labels = ["__meta_kubernetes_pod_name"]
+    target_label = "instance"
+  }
+  rule {
+    source_labels = ["__meta_kubernetes_namespace"]
+    target_label = "controller_namespace"
+  }
+  rule {
+    source_labels = ["__meta_kubernetes_pod_node_name"]
+    target_label = "node"
+  }
+}
+
+prometheus.scrape "flux" {
+  targets = discovery.relabel.flux.output
+  job_name = "flux"
+  scrape_interval = "30s"
+  forward_to = [prometheus.relabel.flux.receiver]
+}
+
+prometheus.relabel "flux" {
+  forward_to = [prometheus.remote_write.sinnoh.receiver]
+  rule {
+    source_labels = ["__name__"]
+    regex = "up|scrape_.*|gotk_reconcile_.*|controller_runtime_reconcile_.*|workqueue_.*"
+    action = "keep"
   }
 }

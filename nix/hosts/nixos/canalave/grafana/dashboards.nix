@@ -355,17 +355,17 @@ _: {
         targets = [(target "topk(20, sum by (host, path) (count_over_time(${logs} | keep host, path [$__range])))" "{{host}}{{path}}")];
       }
     ];
-    selectedPods = ''sinnoh_pod_workload_info{node=~"$node",namespace=~"$namespace",workload=~"$workload",pod=~"$pod"}'';
+    selectedPods = ''pod_workload_info{node=~"$node",namespace=~"$namespace",workload=~"$workload",pod=~"$pod"}'';
     container = ''job="cadvisor",container!="",container!="POD",image!="",namespace=~"$namespace",pod=~"$pod",node=~"$node"'';
     joinPods = expression: "(${expression}) * on (namespace, pod) group_left(workload, workload_kind) ${selectedPods}";
     kubeContainer = ''job="kube-state-metrics",namespace=~"$namespace",pod=~"$pod"'';
-    workloadVariable = variable "workload" ''label_values(sinnoh_pod_workload_info{node=~"$node",namespace=~"$namespace"}, workload)'';
+    workloadVariable = variable "workload" ''label_values(pod_workload_info{node=~"$node",namespace=~"$namespace"}, workload)'';
     workloads =
       dashboard "sinnoh-kubernetes-workloads" "Kubernetes workloads" [
         (variable "node" ''label_values(kube_node_info{job="kube-state-metrics"}, node)'')
-        (variable "namespace" ''label_values(sinnoh_pod_workload_info{node=~"$node"}, namespace)'')
+        (variable "namespace" ''label_values(pod_workload_info{node=~"$node"}, namespace)'')
         workloadVariable
-        (variable "pod" ''label_values(sinnoh_pod_workload_info{node=~"$node",namespace=~"$namespace",workload=~"$workload"}, pod)'')
+        (variable "pod" ''label_values(pod_workload_info{node=~"$node",namespace=~"$namespace",workload=~"$workload"}, pod)'')
       ] ([
           {
             title = "Collector scrape health";
@@ -514,7 +514,8 @@ _: {
             targets = [(target ''kube_cronjob_status_last_successful_time{job="kube-state-metrics",namespace=~"$namespace"} * 1000'' "{{namespace}} / {{cronjob}}")];
             description = "Namespace-wide CronJobs, including those with no current pods. Missing completion remains Unknown.";
           }
-        ]);
+        ]
+        ++ (import ./_flux-panels.nix {inherit target;}));
     pg = ''job="pg-shared"'';
     backup = ''job="node",instance=~"$node"'';
     backupAge = [
@@ -628,7 +629,7 @@ _: {
             desc = false;
           }
         ];
-        targets = [(target ''sinnoh_backup_job_info{${backup}}'' "{{instance}} / {{backup}}")];
+        targets = [(target ''restic_backup_job_info{${backup}}'' "{{instance}} / {{backup}}")];
         description = "Derived from every configured restic job. Includes Sunnyshore k3s and k3s-local-path, and Canalave Grafana, Loki and Prometheus.";
       }
       {
@@ -655,7 +656,7 @@ _: {
         ];
         unit = "s";
         thresholds = backupAge;
-        targets = [(target ''time() - sinnoh_backup_last_success_timestamp_seconds{${backup}}'' "{{instance}} / {{backup}}")];
+        targets = [(target ''time() - restic_backup_last_success_timestamp_seconds{${backup}}'' "{{instance}} / {{backup}}")];
         description = "Warning after 28 hours, critical after 48 hours. Unknown until a successful completion is observed or seeded from systemd.";
       }
       {
@@ -673,7 +674,7 @@ _: {
             desc = false;
           }
         ];
-        targets = [(target ''sinnoh_backup_last_run_success{${backup}}'' "{{instance}} / {{backup}}")];
+        targets = [(target ''restic_backup_last_run_success{${backup}}'' "{{instance}} / {{backup}}")];
         mappings = [
           {
             type = "value";
@@ -707,7 +708,7 @@ _: {
           }
         ];
         unit = "dateTimeAsIso";
-        targets = [(target ''sinnoh_backup_last_completion_timestamp_seconds{${backup}} * 1000'' "{{instance}} / {{backup}}")];
+        targets = [(target ''restic_backup_last_completion_timestamp_seconds{${backup}} * 1000'' "{{instance}} / {{backup}}")];
       }
       {
         title = "Host backup last success";
@@ -725,7 +726,7 @@ _: {
           }
         ];
         unit = "dateTimeAsIso";
-        targets = [(target ''sinnoh_backup_last_success_timestamp_seconds{${backup}} * 1000'' "{{instance}} / {{backup}}")];
+        targets = [(target ''restic_backup_last_success_timestamp_seconds{${backup}} * 1000'' "{{instance}} / {{backup}}")];
       }
     ];
     reporting = dashboard "sinnoh-observability" "Reporting health" [nodeVariable (variable "namespace" ''label_values(kube_pod_info, namespace)'')] [

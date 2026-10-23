@@ -4,13 +4,13 @@ import argparse
 import fcntl
 import json
 import os
-from pathlib import Path
 import subprocess
-import tempfile
 import sys
+import tempfile
 import time
+from pathlib import Path
 
-PREFIX = "sinnoh_backup_"
+PREFIX = "restic_backup_"
 
 
 def completed_result(job):
@@ -47,12 +47,12 @@ def report(directory, job, completion=None, seed=False):
         }
         if destination.exists():
             for line in destination.read_text().splitlines():
-                if line.startswith(PREFIX):
+                if not line.startswith("#") and "_backup_" in line:
                     metric, value = line.rsplit(" ", 1)
-                    values[metric.split("{", 1)[0].removeprefix(PREFIX)] = value
-            if seed:
-                return
-        if seed:
+                    name = metric.split("{", 1)[0].split("_backup_", 1)[1]
+                    if name in values:
+                        values[name] = value
+        if seed and not destination.exists():
             try:
                 completion = completed_result(job)
             except (subprocess.SubprocessError, ValueError, KeyError) as error:
@@ -69,7 +69,7 @@ def report(directory, job, completion=None, seed=False):
                 os.fchmod(output.fileno(), 0o644)
                 for metric, value in values.items():
                     output.write(f'# TYPE {PREFIX}{metric} gauge\n')
-                    output.write(f'{PREFIX}{metric}{{backup={json.dumps(job)}}} {value}\n')
+                    output.write(f'{PREFIX}{metric}{{backup={json.dumps(job)},scope="system",owner="root"}} {value}\n')
                 output.flush()
                 os.fsync(output.fileno())
             os.replace(temporary, destination)
@@ -94,6 +94,6 @@ if __name__ == "__main__":
             and os.environ.get("EXIT_CODE") == "exited"
             and os.environ.get("EXIT_STATUS") == "0"))
         report(arguments.directory, arguments.job, completion, arguments.seed)
-    except Exception as error:
+    except (KeyError, OSError, ValueError, subprocess.SubprocessError) as error:
         # Reporting is best-effort. ExecStopPost must preserve the backup result.
         print(f"Backup metrics for {arguments.job}: {error}", file=sys.stderr)

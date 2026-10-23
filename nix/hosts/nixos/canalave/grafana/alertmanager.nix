@@ -19,16 +19,6 @@ _: {
       globalConfig.external_labels.cluster = "sinnoh";
       webExternalUrl = "http://canalave.sinnoh:3020";
       alertmanagers = [{static_configs = [{targets = ["127.0.0.1:3040"];}];}];
-      scrapeConfigs = [
-        {
-          job_name = "prometheus";
-          static_configs = [{targets = ["127.0.0.1:3020"];}];
-        }
-        {
-          job_name = "alertmanager";
-          static_configs = [{targets = ["127.0.0.1:3040"];}];
-        }
-      ];
       alertmanager = {
         enable = true;
         listenAddress = "0.0.0.0";
