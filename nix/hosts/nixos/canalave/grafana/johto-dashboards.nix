@@ -206,6 +206,7 @@ _: {
       panels = lib.imap0 panel panels;
     };
     node = ''job="node",instance=~"$node"'';
+    btrfsAvailable = ''and on (instance) (btrfs_collector_success{${node}} == 1 and (time() - btrfs_collector_last_run_timestamp_seconds{${node}} < 900))'';
     nodeVariable = variable "node" ''label_values(up{job="node"}, instance)'';
     overview = dashboard "johto-overview" "Johto overview" [nodeVariable] [
       {
@@ -839,10 +840,18 @@ _: {
       }
 
       {
+        title = "Btrfs collector health";
+        type = "stat";
+        unit = "bool";
+        targets = [(target ''btrfs_collector_success{${node}}'' "{{instance}}")];
+        description = "Whether the last collection could read device counters and scrub records. Result panels omit failed or stale collection.";
+      }
+
+      {
         title = "Btrfs device errors";
         type = "timeseries";
         unit = "short";
-        targets = [(target ''node_btrfs_device_errors_total{${node}}'' "{{instance}} {{btrfs_dev_uuid}} {{type}}")];
+        targets = [(target ''btrfs_device_errors_total{${node}} ${btrfsAvailable}'' "{{instance}} {{filesystem}} device {{device}} {{operation}}")];
       }
 
       {
@@ -855,7 +864,7 @@ _: {
           }
         ];
         unit = "s";
-        targets = [(target ''time() - johto_btrfs_scrub_completion_timestamp_seconds{${node}}'' "{{filesystem}} device {{device}}")];
+        targets = [(target ''(time() - btrfs_scrub_last_completion_timestamp_seconds{${node}}) ${btrfsAvailable}'' "{{filesystem}} device {{device}}")];
         thresholds = [
           {
             color = "green";
@@ -882,7 +891,7 @@ _: {
           }
         ];
         unit = "bool";
-        targets = [(target ''johto_btrfs_scrub_success{${node}}'' "{{filesystem}} device {{device}}")];
+        targets = [(target ''btrfs_scrub_last_run_success{${node}} ${btrfsAvailable}'' "{{filesystem}} device {{device}}")];
       }
 
       {
@@ -891,11 +900,11 @@ _: {
         transformations = [
           {
             id = "filterFieldsByName";
-            options.include.names = ["instance" "filesystem" "device" "Value"];
+            options.include.names = ["instance" "filesystem" "device" "kind" "Value"];
           }
         ];
         unit = "short";
-        targets = [(target ''johto_btrfs_scrub_errors{${node}}'' "{{filesystem}} device {{device}}")];
+        targets = [(target ''btrfs_scrub_errors{${node}} ${btrfsAvailable}'' "{{filesystem}} device {{device}} {{kind}}")];
       }
 
       {

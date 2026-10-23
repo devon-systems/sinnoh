@@ -17,7 +17,7 @@ _: {
     smartctl = ''job="smartctl",instance=~"$host",device=~"$drive"'';
     backup = ''job="node",instance=~"$host",backup=~"$backup"'';
     btrfs = ''job="node",instance=~"$host",filesystem=~"$filesystem"'';
-    btrfsAvailable = ''and on (host) (hoenn_btrfs_collector_success{${node}} == 1 and (time() - hoenn_btrfs_collector_last_run_timestamp_seconds{${node}} < 900))'';
+    btrfsAvailable = ''and on (host) (btrfs_collector_success{${node}} == 1 and (time() - btrfs_collector_last_run_timestamp_seconds{${node}} < 900))'';
     panel = index: specification: {
       id = index + 1;
       inherit (specification) title;
@@ -321,7 +321,7 @@ _: {
             {
               name = "filesystem";
               label = "Filesystem";
-              query = ''label_values(hoenn_btrfs_device_info{host=~"$host"}, filesystem)'';
+              query = ''label_values(btrfs_device_info{host=~"$host"}, filesystem)'';
             }
           ];
         panels = lib.imap0 panel [
@@ -352,55 +352,55 @@ _: {
           }
           {
             title = "Btrfs collection succeeded";
-            expr = ''hoenn_btrfs_collector_success{${node}}'';
+            expr = ''btrfs_collector_success{${node}}'';
             unit = "bool";
             description = "Whether the last collection could read mounted-device statistics and available scrub records. This is collector health, not filesystem health.";
           }
           {
             title = "Time since Btrfs collection";
-            expr = ''time() - hoenn_btrfs_collector_last_run_timestamp_seconds{${node}}'';
+            expr = ''time() - btrfs_collector_last_run_timestamp_seconds{${node}}'';
             unit = "s";
             description = "Collection runs every five minutes. Btrfs result panels omit samples if collection failed or is more than 15 minutes old.";
           }
           {
             title = "Last completed scrub succeeded";
-            expr = ''hoenn_btrfs_scrub_last_run_success{${btrfs}} ${btrfsAvailable}'';
+            expr = ''btrfs_scrub_last_run_success{${btrfs}} ${btrfsAvailable}'';
             legend = "{{host}} {{filesystem}} device {{device}}";
             unit = "bool";
             description = "Success requires a completed, uncanceled scrub with no uncorrectable or allocation errors. Corrected errors are shown separately.";
           }
           {
             title = "Time since successful scrub";
-            expr = ''(time() - hoenn_btrfs_scrub_last_success_timestamp_seconds{${btrfs}}) ${btrfsAvailable}'';
+            expr = ''(time() - btrfs_scrub_last_success_timestamp_seconds{${btrfs}}) ${btrfsAvailable}'';
             legend = "{{host}} {{filesystem}} device {{device}}";
             unit = "s";
           }
           {
             title = "Time since scrub completion";
-            expr = ''(time() - hoenn_btrfs_scrub_last_completion_timestamp_seconds{${btrfs}}) ${btrfsAvailable}'';
+            expr = ''(time() - btrfs_scrub_last_completion_timestamp_seconds{${btrfs}}) ${btrfsAvailable}'';
             legend = "{{host}} {{filesystem}} device {{device}}";
             unit = "s";
           }
           {
             title = "Last scrub duration";
-            expr = ''hoenn_btrfs_scrub_duration_seconds{${btrfs}} ${btrfsAvailable}'';
+            expr = ''btrfs_scrub_duration_seconds{${btrfs}} ${btrfsAvailable}'';
             legend = "{{host}} {{filesystem}} device {{device}}";
             unit = "s";
           }
           {
             title = "Btrfs device error counters";
-            expr = ''hoenn_btrfs_device_errors_total{${btrfs}} ${btrfsAvailable}'';
+            expr = ''btrfs_device_errors_total{${btrfs}} ${btrfsAvailable}'';
             legend = "{{host}} {{filesystem}} device {{device}} {{operation}}";
             description = "Persistent read, write, flush, corruption, and generation error counters. Collection never resets them.";
           }
           {
             title = "Errors in the last completed scrub";
-            expr = ''hoenn_btrfs_scrub_errors{${btrfs}} ${btrfsAvailable}'';
+            expr = ''btrfs_scrub_errors{${btrfs}} ${btrfsAvailable}'';
             legend = "{{host}} {{filesystem}} device {{device}} {{kind}}";
           }
           {
             title = "Latest scrub record completed";
-            expr = ''hoenn_btrfs_scrub_finished{${btrfs}} ${btrfsAvailable}'';
+            expr = ''btrfs_scrub_finished{${btrfs}} ${btrfsAvailable}'';
             legend = "{{host}} {{filesystem}} device {{device}}";
             unit = "bool";
             description = "False for running, interrupted, or canceled records. Prior completed results remain visible while a new scrub is incomplete.";
