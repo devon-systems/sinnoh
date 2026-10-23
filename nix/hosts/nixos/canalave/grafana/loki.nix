@@ -1,5 +1,5 @@
 _: {
-  flake.nixosModules.canalave = {config, ...}: {
+  flake.nixosModules.canalave = {
     services.loki = {
       enable = true;
       configuration = {
@@ -46,21 +46,6 @@ _: {
         ];
 
         analytics.reporting_enabled = false;
-      };
-    };
-
-    services.restic.backups.loki = {
-      paths = ["/var/lib/loki"];
-      repository = "rclone:b2:aly-backups/sinnoh/canalave/loki";
-      extraBackupArgs = ["--cleanup-cache"];
-      initialize = true;
-      passwordFile = config.sops.secrets.restic-password.path;
-      pruneOpts = ["--keep-daily 7" "--keep-weekly 4" "--keep-monthly 12"];
-      rcloneConfigFile = config.sops.secrets.rclone-b2.path;
-      timerConfig = {
-        OnCalendar = "daily";
-        Persistent = true;
-        RandomizedDelaySec = "3h";
       };
     };
   };
