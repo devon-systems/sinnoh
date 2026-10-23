@@ -300,8 +300,20 @@ loki.process "workloads" {
   stage.static_labels {
     values = {cluster = "sinnoh"}
   }
+  forward_to = [loki.process.redact.receiver]
+}
+
+loki.process "redact" {
   stage.replace {
-    expression = `(?i)(?:x-plex-token|plexonlinetoken|access_token|refresh_token|api[_-]?key|password|client_secret|authorization)["' ]*(?:[:=]|%3[dDaA])["' ]*(?:bearer\s+|basic\s+)?([^&\s"'<>]+)`
+    expression = `(?i)\b(?:x-plex-token|plexonlinetoken|access_token|refresh_token|api[_-]?key|password|client_secret|authorization)["' ]*(?:[:=]|%3[dDaA])\s*"((?:\\.|[^"\\])*)"`
+    replace = "[REDACTED]"
+  }
+  stage.replace {
+    expression = `(?i)\b(?:x-plex-token|plexonlinetoken|access_token|refresh_token|api[_-]?key|password|client_secret|authorization)["' ]*(?:[:=]|%3[dDaA])\s*'((?:\\.|[^'\\])*)'`
+    replace = "[REDACTED]"
+  }
+  stage.replace {
+    expression = `(?i)\b(?:x-plex-token|plexonlinetoken|access_token|refresh_token|api[_-]?key|password|client_secret|authorization)["' ]*(?:[:=]|%3[dDaA])\s*(?:bearer\s+|basic\s+)?([^&\s"'<>]+)`
     replace = "[REDACTED]"
   }
   forward_to = [loki.write.sinnoh.receiver]

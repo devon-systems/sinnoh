@@ -38,7 +38,15 @@ _: {
         loki.process "redact" {
           forward_to = [loki.write.default.receiver]
           stage.replace {
-            expression = `(?i)(?:x-plex-token|plexonlinetoken|access_token|refresh_token|api[_-]?key|password|client_secret|authorization)["' ]*(?:[:=]|%3[dDaA])["' ]*(?:bearer\s+|basic\s+)?([^&\s"'<>]+)`
+            expression = `(?i)\b(?:x-plex-token|plexonlinetoken|access_token|refresh_token|api[_-]?key|password|client_secret|authorization)["' ]*(?:[:=]|%3[dDaA])\s*"((?:\\.|[^"\\])*)"`
+            replace = "[REDACTED]"
+          }
+          stage.replace {
+            expression = `(?i)\b(?:x-plex-token|plexonlinetoken|access_token|refresh_token|api[_-]?key|password|client_secret|authorization)["' ]*(?:[:=]|%3[dDaA])\s*'((?:\\.|[^'\\])*)'`
+            replace = "[REDACTED]"
+          }
+          stage.replace {
+            expression = `(?i)\b(?:x-plex-token|plexonlinetoken|access_token|refresh_token|api[_-]?key|password|client_secret|authorization)["' ]*(?:[:=]|%3[dDaA])\s*(?:bearer\s+|basic\s+)?([^&\s"'<>]+)`
             replace = "[REDACTED]"
           }
         }
