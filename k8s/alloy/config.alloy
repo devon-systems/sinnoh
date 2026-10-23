@@ -251,9 +251,6 @@ prometheus.scrape "traefik" {
 
 discovery.kubernetes "logs" {
   role = "pod"
-  namespaces {
-    names = ["kube-system", "flux-system", "cnpg-system", "alloy-system", "cert-manager", "default", "hydrant", "slingshot", "skytrace", "vaultwarden", "tranquil-pds", "aly-town", "bobbin", "haunt", "snrld", "aly-codes", "morgan", "atbbs", "switchyard", "morsels"]
-  }
 }
 
 discovery.relabel "logs" {
