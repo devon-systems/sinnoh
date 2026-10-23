@@ -99,6 +99,17 @@ _: {
               access = "proxy";
               url = "http://mauville.narwhal-snapper.ts.net:3030";
             }
+            {
+              name = "Sinnoh Alertmanager";
+              uid = "sinnoh-alertmanager";
+              type = "alertmanager";
+              access = "proxy";
+              url = "http://127.0.0.1:3040";
+              jsonData = {
+                implementation = "prometheus";
+                handleGrafanaManagedAlerts = false;
+              };
+            }
           ];
         };
       };

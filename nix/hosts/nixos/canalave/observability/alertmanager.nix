@@ -84,20 +84,6 @@ _: {
       };
     };
 
-    services.grafana.provision.datasources.settings.datasources = [
-      {
-        name = "Sinnoh Alertmanager";
-        uid = "sinnoh-alertmanager";
-        type = "alertmanager";
-        access = "proxy";
-        url = "http://127.0.0.1:3040";
-        jsonData = {
-          implementation = "prometheus";
-          handleGrafanaManagedAlerts = false;
-        };
-      }
-    ];
-
     services.restic.backups.alertmanager = {
       paths = ["/var/lib/alertmanager"];
       repository = "rclone:b2:aly-backups/sinnoh/canalave/alertmanager";
