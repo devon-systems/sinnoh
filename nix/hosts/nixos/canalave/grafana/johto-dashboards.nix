@@ -5,206 +5,37 @@ _: {
     pkgs,
     ...
   }: let
-    source = name: let
-      datasource = lib.findFirst (item: item.name == name) null config.services.grafana.provision.datasources.settings.datasources;
-    in {inherit (datasource) type uid;};
-    prometheus = source "Johto Prometheus";
-    loki = source "Johto Loki";
-    links = [
-      {
-        type = "dashboards";
+    helpers = import ./_lib.nix {
+      inherit lib;
+      datasources = config.services.grafana.provision.datasources.settings.datasources;
+    };
+    inherit (helpers) target;
+    prometheus = helpers.source "Johto Prometheus";
+    loki = helpers.source "Johto Loki";
+    variable = helpers.variable prometheus;
+    dashboard = uid: title: variables: panels:
+      helpers.dashboard prometheus {
+        inherit uid title variables panels;
+        description = "Johto telemetry collected every 30 seconds. Unknown means telemetry is absent, not healthy.";
         tags = ["johto"];
-        asDropdown = false;
-        includeVars = true;
-        keepTime = true;
-        title = "Johto";
-      }
-    ];
-    target = expr: legendFormat: {inherit expr legendFormat;};
-    panel = index: specification: let
-      type = specification.type or "timeseries";
-      datasource = specification.datasource or prometheus;
-      instant = type == "stat" || type == "table";
-    in {
-      id = index + 1;
-      inherit type datasource;
-      interval = "30s";
-      inherit (specification) title;
-      transformations = specification.transformations or [];
-      description = specification.description or "Missing telemetry is shown as Unknown. Rates account for counter resets.";
-      gridPos = {
-        x = lib.mod index 2 * 12;
-        y = builtins.div index 2 * 8;
-        w = 12;
-        h = 8;
-      };
-      targets = lib.imap0 (queryIndex: query:
-        query
-        // {
-          inherit datasource;
-          refId = "query-${toString queryIndex}";
-          editorMode = "code";
-          format =
-            if type == "table"
-            then "table"
-            else "time_series";
-          inherit instant;
-          range = !instant;
-          queryType =
-            if instant
-            then "instant"
-            else "range";
-        })
-      specification.targets;
-      fieldConfig = {
-        defaults =
+        links = [
           {
-            unit = specification.unit or "short";
-            min = 0;
-            max =
-              if (specification.unit or "") == "percentunit"
-              then 1
-              else null;
-            noValue = "Unknown";
-            color.mode =
-              if specification ? thresholds
-              then "thresholds"
-              else "palette-classic";
-            custom = {spanNulls = false;};
-            mappings =
-              (specification.mappings or [])
-              ++ lib.optional ((specification.unit or "") == "bool") {
-                type = "value";
-                options = {
-                  "0" = {
-                    text = "False";
-                    color = "red";
-                  };
-                  "1" = {
-                    text = "True";
-                    color = "green";
-                  };
-                };
-              }
-              ++ map (match: {
-                type = "special";
-                options = {
-                  inherit match;
-                  result = {
-                    text = "Unknown";
-                    color = "text";
-                  };
-                };
-              }) ["nan" "null"];
+            type = "dashboards";
+            tags = ["johto"];
+            asDropdown = false;
+            includeVars = true;
+            keepTime = true;
+            title = "Johto";
           }
-          // lib.optionalAttrs (specification ? thresholds) {
-            thresholds = {
-              mode = "absolute";
-              steps = specification.thresholds;
-            };
-          };
-        overrides =
-          lib.optional (type == "table") {
-            matcher = {
-              id = "byRegexp";
-              options = "^(?!Value$).*";
-            };
-            properties = [
-              {
-                id = "unit";
-                value = "none";
-              }
-              {
-                id = "mappings";
-                value = [];
-              }
-            ];
-          }
-          ++ lib.optional (type == "table" && (specification ? thresholds || specification ? mappings || (specification.unit or "") == "bool")) {
-            matcher = {
-              id = "byName";
-              options = "Value";
-            };
-            properties = [
-              {
-                id = "custom.cellOptions";
-                value.type = "color-text";
-              }
-            ];
-          };
-      };
-      options =
-        if type == "logs"
-        then {
-          showTime = true;
-          showLabels = true;
-          sortOrder = "Descending";
-        }
-        else if type == "stat"
-        then {
-          reduceOptions = {
-            calcs = ["lastNotNull"];
-            fields = "";
-            values = false;
-          };
-          graphMode = "none";
-          text = {
-            titleSize = 14;
-            valueSize =
-              if (specification.unit or "") == "dateTimeAsIso"
-              then 16
-              else 32;
-          };
-          colorMode = "value";
-        }
-        else if type == "table"
-        then {
-          showHeader = true;
-          sortBy = specification.sortBy or [];
-          cellHeight = "sm";
-        }
-        else {
-          legend = {
-            displayMode = "list";
-            placement = "bottom";
-          };
-          tooltip.mode = "multi";
+        ];
+        time = {
+          from =
+            if uid == "johto-postgres-backups"
+            then "now-7d"
+            else "now-6h";
+          to = "now";
         };
-    };
-    variable = name: query: {
-      inherit name query;
-      label = lib.toUpper (builtins.substring 0 1 name) + builtins.substring 1 (-1) name;
-      type = "query";
-      datasource = prometheus;
-      refresh = 2;
-      sort = 1;
-      multi = true;
-      includeAll = true;
-      allValue = ".*";
-      current = {
-        text = "All";
-        value = "$__all";
       };
-    };
-    dashboard = uid: title: variables: panels: {
-      inherit uid title links;
-      description = "Johto telemetry collected every 30 seconds. Unknown means telemetry is absent, not healthy.";
-      tags = ["johto"];
-      schemaVersion = 39;
-      version = 1;
-      editable = false;
-      timezone = "browser";
-      refresh = "30s";
-      time = {
-        from =
-          if uid == "johto-postgres-backups"
-          then "now-7d"
-          else "now-6h";
-        to = "now";
-      };
-      templating.list = variables;
-      panels = lib.imap0 panel panels;
-    };
     node = ''job="node",instance=~"$node"'';
     btrfsAvailable = ''and on (instance) (btrfs_collector_success{${node}} == 1 and (time() - btrfs_collector_last_run_timestamp_seconds{${node}} < 900))'';
     nodeVariable = variable "node" ''label_values(up{job="node"}, instance)'';

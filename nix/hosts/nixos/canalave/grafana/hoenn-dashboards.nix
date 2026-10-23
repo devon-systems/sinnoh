@@ -1,106 +1,34 @@
 _: {
   flake.nixosModules.canalave = {
+    config,
     lib,
     pkgs,
     ...
   }: let
-    prometheus = {
-      type = "prometheus";
-      uid = "hoenn-prometheus";
+    helpers = import ./_lib.nix {
+      inherit lib;
+      datasources = config.services.grafana.provision.datasources.settings.datasources;
+      interval = "1m";
     };
-    loki = {
-      type = "loki";
-      uid = "hoenn-loki";
-    };
-    target = expr: legendFormat: {inherit expr legendFormat;};
+    inherit (helpers) target;
+    prometheus = helpers.source "Hoenn Prometheus";
+    loki = helpers.source "Hoenn Loki";
     node = ''job="node",instance=~"$host"'';
     smartctl = ''job="smartctl",instance=~"$host",device=~"$drive"'';
     backup = ''job="node",instance=~"$host",backup=~"$backup"'';
     btrfs = ''job="node",instance=~"$host",filesystem=~"$filesystem"'';
     btrfsAvailable = ''and on (host) (btrfs_collector_success{${node}} == 1 and (time() - btrfs_collector_last_run_timestamp_seconds{${node}} < 900))'';
-    panel = index: specification: {
-      id = index + 1;
-      inherit (specification) title;
-      type = specification.type or "timeseries";
-      datasource = specification.datasource or prometheus;
-      description = specification.description or "Gaps mean telemetry is unavailable. Sleeping desktops do not report metrics.";
-      gridPos = {
-        x = lib.mod index 2 * 12;
-        y = builtins.div index 2 * 8;
-        w = 12;
-        h = 8;
-      };
-      transformations = specification.transformations or [];
-      targets = lib.imap0 (index: query:
-        query
-        // {
-          refId = toString index;
-          format =
-            if (specification.type or "") == "table"
-            then "table"
-            else "time_series";
-          instant = (specification.type or "") == "table";
-          range = (specification.type or "") != "table";
-        }) (specification.targets or [
-        {
-          inherit (specification) expr;
-          legendFormat = specification.legend or "{{host}}";
-        }
-      ]);
-      fieldConfig.defaults = {
-        unit = specification.unit or "short";
-        noValue = "Unknown";
-        mappings = specification.mappings or [];
-        custom.spanNulls = false;
-      };
-      options =
-        if (specification.type or "") == "logs"
-        then {
-          showTime = true;
-          showLabels = true;
-          sortOrder = "Descending";
-        }
-        else {
-          legend = {
-            displayMode = "list";
-            placement = "bottom";
-          };
-          tooltip.mode = "multi";
-        };
-    };
-    dashboard = {
+    panel = helpers.panel prometheus;
+    variable = helpers.variable prometheus;
+    dashboard = helpers.dashboard prometheus {
       uid = "hoenn-desktops";
       title = "Hoenn desktops";
       description = "Desktop metrics and logs on Mauville. Sleeping or disconnected hosts leave gaps. Linux and macOS expose different collectors.";
       tags = ["hoenn"];
-      schemaVersion = 39;
-      version = 1;
-      editable = false;
-      timezone = "browser";
-      refresh = "1m";
-      time = {
-        from = "now-6h";
-        to = "now";
-      };
-      templating.list = [
-        {
-          name = "host";
-          label = "Host";
-          type = "query";
-          datasource = prometheus;
-          query = ''label_values(up{job="node"}, instance)'';
-          refresh = 2;
-          sort = 1;
-          multi = true;
-          includeAll = true;
-          allValue = ".*";
-          current = {
-            text = "All";
-            value = "$__all";
-          };
-        }
+      variables = [
+        (variable "host" ''label_values(up{job="node"}, instance)'')
       ];
-      panels = lib.imap0 panel [
+      panels = [
         {
           title = "Time since last sample";
           description = "Age of the latest node scrape timestamp in the past 24 hours, including sleeping hosts. Unknown means no sample in that window.";
@@ -180,22 +108,7 @@ _: {
         templating.list =
           dashboard.templating.list
           ++ [
-            {
-              name = "drive";
-              label = "Drive";
-              type = "query";
-              datasource = prometheus;
-              query = ''label_values(smartctl_device{job="smartctl",host=~"$host"}, device)'';
-              refresh = 2;
-              sort = 1;
-              multi = true;
-              includeAll = true;
-              allValue = ".*";
-              current = {
-                text = "All";
-                value = "$__all";
-              };
-            }
+            (variable "drive" ''label_values(smartctl_device{job="smartctl",host=~"$host"}, device)'')
           ];
         panels = lib.imap0 panel [
           {
@@ -299,20 +212,7 @@ _: {
         };
         templating.list =
           dashboard.templating.list
-          ++ map (item: {
-            inherit (item) name query label;
-            type = "query";
-            datasource = prometheus;
-            refresh = 2;
-            sort = 1;
-            multi = true;
-            includeAll = true;
-            allValue = ".*";
-            current = {
-              text = "All";
-              value = "$__all";
-            };
-          }) [
+          ++ map (item: (variable item.name item.query) // {inherit (item) label;}) [
             {
               name = "backup";
               label = "Backup";
@@ -412,20 +312,6 @@ _: {
           }
         ];
       };
-    variable = name: query: {
-      inherit name query;
-      type = "query";
-      datasource = prometheus;
-      refresh = 2;
-      sort = 1;
-      multi = true;
-      includeAll = true;
-      allValue = ".*";
-      current = {
-        text = "All";
-        value = "$__all";
-      };
-    };
     kubernetes =
       dashboard
       // {
