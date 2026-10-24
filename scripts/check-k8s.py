@@ -40,6 +40,41 @@ def resource_name(document):
     )
 
 
+def check_flux_bundle(root):
+    """Compare controllers, CRDs, and RBAC with the declared Flux release."""
+    path = root / "k8s/flux-system/gotk-components.yaml"
+    documents = list(yaml.safe_load_all(path.read_text()))
+    namespace = next(
+        document
+        for document in documents
+        if document["kind"] == "Namespace"
+        and document["metadata"]["name"] == "flux-system"
+    )
+    version = namespace["metadata"]["labels"]["app.kubernetes.io/version"]
+    published = render("flux", "install", "--version", version, "--export")
+
+    def resources(bundle):
+        for document in bundle:
+            if document["kind"] == "Deployment":
+                for container in document["spec"]["template"]["spec"]["containers"]:
+                    container["image"] = container["image"].split("@", 1)[0]
+        return {resource_name(document): document for document in bundle}
+
+    actual, expected = resources(documents), resources(published)
+    changed = sorted(
+        name
+        for name in actual.keys() | expected.keys()
+        if actual.get(name) != expected.get(name)
+    )
+    if changed:
+        raise ValueError(
+            f"Flux bundle differs from release {version}: {', '.join(changed)}. "
+            f"Regenerate gotk-components.yaml with flux install --version={version} --export; "
+            "keep customizations in kustomization.yaml."
+        )
+    print(f"Flux controllers, CRDs, and RBAC match release {version}", flush=True)
+
+
 def discover(root):
     """Render the local Flux targets and retain their individual ownership."""
     pending = [("flux-system", root / "k8s/flux-system")]
@@ -435,6 +470,7 @@ def main():
     parser.add_argument("--kubernetes-version", required=True)
     args = parser.parse_args()
     root = Path.cwd().resolve()
+    check_flux_bundle(root)
     targets, declarations = discover(root)
     ancestors = dependency_order(declarations)
     check_roots(root, targets)

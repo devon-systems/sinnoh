@@ -60,6 +60,11 @@ reconciliation. These Flux commands explicitly target the `sinnoh` context.
 `just flux-bootstrap <age-key-file> <git-ssh-key-file>` installs SOPS decryption
 and bootstraps the checked-in Flux version.
 
+Upgrade Flux controllers, CRDs, and permissions together. Regenerate the bundle
+with `flux install --version=vX.Y.Z --export > k8s/flux-system/gotk-components.yaml`.
+Keep customizations in `k8s/flux-system/kustomization.yaml`. Renovate skips the
+generated bundle, and `just check-k8s` rejects differences from its declared release.
+
 ## Deployment
 
 `blzrd` deploys `sunnyshore` and `canalave`. For example:
