@@ -31,7 +31,14 @@ Use scoped Conventional Commits: `fix(<scope>): <description>` for fixes and `fe
 
 ## Deploy deliberately
 
-Flux deploys Kubernetes changes from `master`. Do not apply repository manifests with `kubectl` unless you are recovering the cluster. Use `blzrd switch sunnyshore` or `blzrd switch canalave` only after validation. `blzrd boot <host>` changes the next boot without activating it. A bare `blzrd switch` targets both hosts.
+Comin reconciles host configurations from `master`. Flux reconciles Kubernetes
+resources from `master`. Commit and push validated changes, then let the existing
+automation reconcile them. Use read-only checks to verify rollout.
+
+Manual deployment, forced reconciliation, Nix store copies to hosts, and restarts
+of deployment services require an explicit user request. Never deploy to test a
+configuration. Apply repository manifests with `kubectl` only during user-requested
+bootstrap or cluster recovery.
 
 The B2 state backend does not lock OpenTofu state. Review the plan before you apply, and never run concurrent applies.
 
