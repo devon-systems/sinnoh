@@ -1,7 +1,5 @@
 _: {
   flake.nixosModules.sunnyshore = {config, ...}: {
-    networking.firewall.allowedTCPPorts = [23];
-
     services.k3s = {
       role = "server";
       clusterInit = true;
