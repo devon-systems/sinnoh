@@ -468,9 +468,16 @@ def main():
     """Run the same credential-free checks locally and in CI."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--kubernetes-version", required=True)
+    parser.add_argument(
+        "--flux-bundle-only",
+        action="store_true",
+        help="Only compare the Flux installation with its declared release",
+    )
     args = parser.parse_args()
     root = Path.cwd().resolve()
     check_flux_bundle(root)
+    if args.flux_bundle_only:
+        return
     targets, declarations = discover(root)
     ancestors = dependency_order(declarations)
     check_roots(root, targets)
