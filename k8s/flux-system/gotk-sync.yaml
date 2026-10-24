@@ -22,6 +22,11 @@ spec:
   interval: 10m0s
   path: ./k8s/flux-system
   prune: true
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: notification-controller
+      namespace: flux-system
   sourceRef:
     kind: GitRepository
     name: flux-system

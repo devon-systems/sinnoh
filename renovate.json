@@ -49,6 +49,11 @@
       "matchManagers": ["nix"],
       "matchPackageNames": ["/^https:\\/\\/flakehub\\.com\\/f\\//"],
       "enabled": false
+    },
+    {
+      "description": "Upgrade Flux controllers and CRDs together as a generated bundle",
+      "matchFileNames": ["k8s/flux-system/gotk-components.yaml"],
+      "enabled": false
     }
   ],
 
