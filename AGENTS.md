@@ -11,7 +11,7 @@ nix build .#nixosConfigurations.sunnyshore.config.system.build.toplevel
 nix build .#nixosConfigurations.canalave.config.system.build.toplevel
 ```
 
-After `facter.json` changes, run `nix run github:devon-systems/infra#generate-host-readmes`. Never edit text between generated-section markers.
+After `facter.json` changes, run `nix run github:devon-systems/dvnpkgs#generate-host-readmes`. Never edit text between generated-section markers.
 
 For Kubernetes changes, update resource lists and Flux resources together. Never reformat `k8s/flux-system/gotk-components.yaml`. Run `just check-k8s`; it renders Flux targets and local Helm releases with configured values, fetches schemas over the network, skips encrypted SOPS documents and generated CRDs, fails on other missing schemas, and validates remote Helm declarations. It also renders the pinned Tailscale operator Deployment with public values to verify resource settings; other remote charts remain unrendered.
 
