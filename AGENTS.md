@@ -1,24 +1,21 @@
 # Work in Sinnoh
 
-Sinnoh runs production infrastructure. `nix/hosts/nixos/` contains the Sunnyshore and Canalave hosts. `k8s/` contains Flux-managed workloads. `terraform/` manages Cloudflare DNS. Keep host secrets in `secrets/`, Kubernetes secrets in `k8s/secrets/`, and public SOPS recipients in `keys/`.
+Sinnoh runs production infrastructure. NixOS hosts Sunnyshore and Canalave live in `nix/hosts/nixos/`; Flux workloads live in `k8s/`; Cloudflare DNS lives in `terraform/`. Keep host secrets in `secrets/`, Kubernetes secrets in `k8s/secrets/`, and public SOPS recipients in `keys/`.
 
-## Check a change
+## Validate changes
 
-Run `nix fmt` and `nix flake check` before you commit. Build the changed host. Build both hosts when you change a shared NixOS module.
+Before committing, run `nix fmt` and `nix flake check`. Build each changed host; build both after shared NixOS module changes:
 
 ```sh
 nix build .#nixosConfigurations.sunnyshore.config.system.build.toplevel
 nix build .#nixosConfigurations.canalave.config.system.build.toplevel
 ```
 
-If a NixOS host's `facter.json` changes, run `nix run github:devon-systems/infra#generate-host-readmes`. Do not edit text between generated-section markers in a host README.
+After `facter.json` changes, run `nix run github:devon-systems/infra#generate-host-readmes`. Never edit text between generated-section markers.
 
-When you change a Kubernetes resource, update its `kustomization.yaml` or Flux resource in the same change. Do not reformat `k8s/flux-system/gotk-components.yaml`.
+For Kubernetes changes, update resource lists and Flux resources together. Never reformat `k8s/flux-system/gotk-components.yaml`. Run `just check-k8s`; it renders Flux targets and local Helm releases with configured values, fetches schemas over the network, skips encrypted SOPS documents and generated CRDs, fails on other missing schemas, and validates remote Helm declarations without rendering their charts.
 
-Run `just check-k8s` after Kubernetes changes. It renders Flux targets and local Helm releases with their configured values. The check needs network access to fetch schemas. It excludes encrypted SOPS documents and generated CRD definitions. Other resources fail if their schema is missing. It validates remote Helm release declarations but does not render their charts.
-
-For Terraform changes, load the credentials with direnv. On a fresh checkout,
-run `tofu -chdir=terraform init` first. Then run:
+For OpenTofu changes, load credentials with direnv and run `tofu -chdir=terraform init` on a fresh checkout. Then run:
 
 ```sh
 tofu -chdir=terraform fmt -check
@@ -27,25 +24,18 @@ tofu -chdir=terraform plan
 
 ## Commit messages
 
-Use scoped Conventional Commits: `fix(<scope>): <description>` for fixes and `feat(<scope>): <description>` for new features. Choose a program, module, or path as the scope. For example, `fix(postgresql): restore database connectivity` or `feat(k8s): add a database backup job`.
+Use scoped Conventional Commits with a program, module, or path as scope, such as `fix(postgresql): restore database connectivity`.
 
 ## Deploy deliberately
 
-Comin reconciles host configurations from `master`. Flux reconciles Kubernetes
-resources from `master`. Commit and push validated changes, then let the existing
-automation reconcile them. Use read-only checks to verify rollout.
+Comin reconciles hosts and Flux reconciles Kubernetes from `master`. Push validated changes, let automation reconcile, and verify with read-only checks.
 
-Manual deployment, forced reconciliation, Nix store copies to hosts, and restarts
-of deployment services require an explicit user request. Never deploy to test a
-configuration. Apply repository manifests with `kubectl` only during user-requested
-bootstrap or cluster recovery.
+Manual deployment, forced reconciliation, Nix store copies to hosts, and deployment-service restarts require an explicit user request. Never deploy to test. Apply manifests with `kubectl` only for requested bootstrap or recovery.
 
-The B2 state backend does not lock OpenTofu state. Review the plan before you apply, and never run concurrent applies.
+The B2 backend does not lock OpenTofu state. Review every plan before applying; never run concurrent applies.
 
 ## Keep secrets out of Git
 
-Do not commit decrypted secrets, private keys, OpenTofu state, or saved plans. Edit secrets through SOPS. When `keys/` changes, run `just sops-rekey` and commit the updated `.sops.yaml` and encrypted files together.
+Never commit decrypted secrets, private keys, OpenTofu state, or saved plans. Run `just sops-bootstrap` once to derive the local age key from SSH. Edit host secrets with `just sops-edit tailscale.yaml` and Kubernetes secrets with their full path, such as `just sops-edit k8s/secrets/pg-shared-b2.sops.yaml`.
 
-Use `just sops-bootstrap` once to derive your local age key from your SSH key.
-For host secrets, use `just sops-edit tailscale.yaml`. For Kubernetes secrets,
-pass the full path, such as `just sops-edit k8s/secrets/pg-shared-b2.sops.yaml`.
+After `keys/` changes, run `just sops-rekey`; commit `.sops.yaml` with every re-encrypted file.
