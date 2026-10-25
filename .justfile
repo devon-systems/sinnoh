@@ -29,16 +29,20 @@ update *inputs:
 sops-bootstrap:
     #!/usr/bin/env bash
     set -euo pipefail
-    if [[ -f ~/.config/sops/age/keys.txt ]]; then
+    if [[ -s ~/.config/sops/age/keys.txt ]]; then
         echo "~/.config/sops/age/keys.txt already exists; skipping."
         exit 0
     fi
+    umask 077
     mkdir -p ~/.config/sops/age
-    ssh-to-age -private-key -i ~/.ssh/id_ed25519 > ~/.config/sops/age/keys.txt
-    chmod 600 ~/.config/sops/age/keys.txt
+    temporary=$(mktemp ~/.config/sops/age/keys.txt.XXXXXX)
+    trap 'rm -f "$temporary"' EXIT
+    ssh-to-age -private-key -i ~/.ssh/id_ed25519 > "$temporary"
+    recipient=$(age-keygen -y "$temporary")
+    mv "$temporary" ~/.config/sops/age/keys.txt
     echo "wrote ~/.config/sops/age/keys.txt"
     echo "this machine's age recipient (must be in .sops.yaml):"
-    ssh-to-age -i ~/.ssh/id_ed25519.pub
+    printf '%s\n' "$recipient"
 
 # Regenerate SOPS recipients and re-encrypt host and Kubernetes secrets
 [group('secrets')]
