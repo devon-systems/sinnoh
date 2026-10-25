@@ -15,7 +15,7 @@ If a NixOS host's `facter.json` changes, run `nix run github:devon-systems/infra
 
 When you change a Kubernetes resource, update its `kustomization.yaml` or Flux resource in the same change. Do not reformat `k8s/flux-system/gotk-components.yaml`.
 
-Run `nix run .#check-k8s` after Kubernetes changes. It renders Flux targets and local Helm releases with their configured values. The check needs network access to fetch schemas. It excludes encrypted SOPS documents and generated CRD definitions. Other resources fail if their schema is missing. It validates remote Helm release declarations but does not render their charts.
+Run `just check-k8s` after Kubernetes changes. It renders Flux targets and local Helm releases with their configured values. The check needs network access to fetch schemas. It excludes encrypted SOPS documents and generated CRD definitions. Other resources fail if their schema is missing. It validates remote Helm release declarations but does not render their charts.
 
 For Terraform changes, load the credentials with direnv. On a fresh checkout,
 run `tofu -chdir=terraform init` first. Then run:

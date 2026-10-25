@@ -127,7 +127,7 @@ sops-edit FILE:
     #!/usr/bin/env bash
     set -euo pipefail
     case "$1" in
-        secrets/*|k8s/secrets/*|k8s/secrets/*) sops "$1" ;;
+        secrets/*|k8s/secrets/*) sops "$1" ;;
         *) sops "secrets/$1" ;;
     esac
 
