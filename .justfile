@@ -203,21 +203,3 @@ flux-bootstrap AGE_KEY_FILE SSH_KEY_FILE:
     flux --context "{{cluster}}" create secret git flux-system --url="$remote" --private-key-file="$2" --export | kubectl --context "{{cluster}}" apply -f -
     kubectl --context "{{cluster}}" apply -f k8s/flux-system/gotk-sync.yaml
     flux --context "{{cluster}}" reconcile kustomization flux-system --with-source
-
-############################################################################
-#
-#  NixOS
-#
-############################################################################
-############################################################################
-#
-#  Darwin
-#
-############################################################################
-
-# Reset launchpad to force it to reindex Applications
-[group('desktop')]
-[macos]
-reset-launchpad:
-    defaults write com.apple.dock ResetLaunchPad -bool true
-    killall Dock
