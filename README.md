@@ -1,11 +1,11 @@
 # sinnoh
 
-Declarative infrastructure for my production services. Sinnoh combines NixOS,
-k3s, Flux, SOPS, and OpenTofu to manage hosts, applications, networking, DNS,
-and backups.
+NixOS, k3s, and OpenTofu configuration for production services. Sinnoh manages
+hosts, applications, private networking, Cloudflare DNS, and backups.
 
-For my personal homelab, see [johto](https://github.com/devon-systems/johto).
-For my personal Nix flake, see [hoenn](https://github.com/devon-systems/hoenn).
+See also [Hoenn](https://github.com/devon-systems/hoenn) for personal machines,
+[Johto](https://github.com/devon-systems/johto) for the homelab, and
+[Kanto](https://github.com/devon-systems/kanto) for shared inference.
 
 ## Architecture
 
@@ -15,81 +15,82 @@ For my personal Nix flake, see [hoenn](https://github.com/devon-systems/hoenn).
 | [`canalave`](nix/hosts/nixos/canalave/README.md)     | k3s agent and observability services     |
 
 Both hosts run NixOS on OpenStack and communicate over the `sinnoh` WireGuard
-interface. Flux watches the `master` branch and reconciles the application,
-networking, certificate, database, backup, and secret resources composed by
-`k8s/flux-system/`.
+interface. The cluster runs application, networking, certificate, database,
+backup, and secret resources.
 
-See the shared [observability runbook](https://github.com/devon-systems/infra/blob/master/docs/observability.md)
-to check metrics and logs or troubleshoot missing data.
+Comin reconciles host configurations from `master`. Flux reconciles the
+Kubernetes resources in `k8s/flux-system/` from the same branch. OpenTofu
+manages Cloudflare DNS separately.
 
 ## Repository layout
 
 ```text
 nix/
-├── hosts/nixos/       Per-host NixOS configuration and hardware state
-└── nixos/             Shared modules, features, services, and users
-k8s/                  Flux, Kustomize, Helm, and application manifests
+├── hosts/nixos/       Host configuration and hardware state
+└── nixos/             Shared modules, services, and users
+k8s/                  Flux and application manifests
 secrets/              SOPS-encrypted host secrets
-keys/                 Public SSH keys used to derive age recipients
+keys/                 Public SOPS recipients
 terraform/            OpenTofu configuration for Cloudflare DNS
-scripts/              Repository maintenance utilities
+scripts/              Maintenance tools
 ```
 
 `flake.nix` imports the flake-parts modules under `nix/` and exposes the
-`sunnyshore` and `canalave` NixOS configurations. Kubernetes applications are
-grouped by service under `k8s/`. `k8s/flux-system/` defines their reconciliation
-order.
+`sunnyshore` and `canalave` NixOS configurations. Kubernetes secrets live in
+`k8s/secrets/`.
 
-## Work locally
+## Development
 
-Enter the pinned development shell with `nix develop`, or use `direnv allow`
-to load it automatically. From the repository root:
+Enter the pinned development shell with `nix develop`, or run `direnv allow` to
+load it automatically. Then run:
 
 ```sh
 nix fmt
 nix flake check
 ```
 
-Run `just` to list maintenance commands.
+Build each host affected by a Nix change. Build both hosts after changing a
+shared NixOS module:
 
-The Kubernetes recipes match Hoenn and the other cluster repository. Use
-`just check-k8s` for manifest validation, `just reconcile` to reconcile the Flux
-root, `just reconcile <name>` for a workload, and `just flux-status` to inspect
-reconciliation. These Flux commands explicitly target the `sinnoh` context.
-`just kubeconfig <host> <api-address>` fetches a named administrator kubeconfig.
-`just flux-bootstrap <age-key-file> <git-ssh-key-file>` installs SOPS decryption
-and bootstraps the checked-in Flux version.
+```sh
+nix build .#nixosConfigurations.sunnyshore.config.system.build.toplevel
+nix build .#nixosConfigurations.canalave.config.system.build.toplevel
+```
 
-Upgrade Flux controllers, CRDs, and permissions together. Regenerate the bundle
-with `flux install --version=vX.Y.Z --export > k8s/flux-system/gotk-components.yaml`.
-Keep customizations in `k8s/flux-system/kustomization.yaml`. Renovate's Flux manager
-updates the complete bundle and auto-merges minor and patch releases after CI.
-Its Kubernetes manager skips individual images in this file. `just check-k8s`
-rejects differences from the declared Flux release.
+After Kubernetes changes, run `just check-k8s`. For OpenTofu changes, run
+`tofu -chdir=terraform init` on a fresh checkout, then run:
+
+```sh
+tofu -chdir=terraform fmt -check
+tofu -chdir=terraform plan
+```
+
+Run `just` to list the other maintenance commands.
 
 ## Deployment
 
-`blzrd` deploys `sunnyshore` and `canalave`. For example:
+Commit and push validated changes, then let Comin and Flux reconcile `master`.
+Run `just flux-status` to inspect the cluster through the `sinnoh` context.
 
-```sh
-blzrd switch sunnyshore
-```
+Review the OpenTofu plan before applying DNS changes. The B2 state backend does
+not lock state, so never run concurrent applies.
 
-`switch` activates the configuration and sets the boot default. `boot` sets
-the boot default without activating it. Without a host name, `blzrd switch`
-deploys every registered node.
-
-Flux deploys Kubernetes workloads from `master`. OpenTofu manages DNS.
+The [observability runbook](https://github.com/devon-systems/infra/blob/master/docs/observability.md)
+explains how to check metrics and logs.
 
 ## Secrets
 
-SOPS encrypts secrets for the recipients in `.sops.yaml`. Public keys live in
-`keys/`. To edit a host secret from the development shell:
+Run `just sops-bootstrap` once per machine to derive your local age key from
+your SSH key. Then edit secrets with SOPS:
 
 ```sh
 just sops-edit tailscale.yaml
+just sops-edit k8s/secrets/pg-shared-b2.sops.yaml
 ```
 
 Direnv loads the encrypted Cloudflare and Backblaze credentials for OpenTofu.
+After changing `keys/`, run `just sops-rekey`. Commit `.sops.yaml` and all
+re-encrypted files together. Never commit decrypted secrets, private keys,
+OpenTofu state, or saved plans.
 
 This project is available under the [MIT License](LICENSE.md).
