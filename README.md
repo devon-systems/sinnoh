@@ -4,8 +4,8 @@ Declarative infrastructure for my production services. Sinnoh combines NixOS,
 k3s, Flux, SOPS, and OpenTofu to manage hosts, applications, networking, DNS,
 and backups.
 
-For my personal homelab, see [johto](https://github.com/alyraffauf/johto).
-For my personal Nix flake, see [hoenn](https://github.com/alyraffauf/hoenn).
+For my personal homelab, see [johto](https://github.com/devon-systems/johto).
+For my personal Nix flake, see [hoenn](https://github.com/devon-systems/hoenn).
 
 ## Architecture
 

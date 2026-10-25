@@ -11,7 +11,7 @@ nix build .#nixosConfigurations.sunnyshore.config.system.build.toplevel
 nix build .#nixosConfigurations.canalave.config.system.build.toplevel
 ```
 
-If a NixOS host's `facter.json` changes, run `nix run github:alyraffauf/infra#generate-host-readmes`. Do not edit text between generated-section markers in a host README.
+If a NixOS host's `facter.json` changes, run `nix run github:devon-systems/infra#generate-host-readmes`. Do not edit text between generated-section markers in a host README.
 
 When you change a Kubernetes resource, update its `kustomization.yaml` or Flux resource in the same change. Do not reformat `k8s/flux-system/gotk-components.yaml`.
 
