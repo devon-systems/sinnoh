@@ -36,6 +36,7 @@ _: {
       sopsFile = self + "/secrets/wireguard-sinnoh.yaml";
       key = hostName;
       mode = "0400";
+      restartUnits = ["wireguard-sinnoh.service"];
     };
 
     networking = {

@@ -58,6 +58,7 @@ in {
       sopsFile = self + "/secrets/wireguard-hoenn.yaml";
       key = "sunnyshore";
       mode = "0400";
+      restartUnits = ["wireguard-hoenn.service"];
     };
 
     networking = {
