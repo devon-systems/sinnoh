@@ -132,6 +132,6 @@ _: {
       ];
     };
   in {
-    services.grafana.provision.dashboards.settings.providers = map provider ["Hoenn" "Johto" "Sinnoh"];
+    services.grafana.provision.dashboards.settings.providers = map provider ["Hoenn" "Johto" "Sinnoh" "Kanto"];
   };
 }

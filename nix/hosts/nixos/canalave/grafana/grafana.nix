@@ -100,6 +100,21 @@ _: {
               url = "http://mauville.narwhal-snapper.ts.net:3030";
             }
             {
+              name = "Kanto Prometheus";
+              uid = "kanto-prometheus";
+              type = "prometheus";
+              access = "proxy";
+              url = "http://vermilion.narwhal-snapper.ts.net:3020";
+              jsonData.timeInterval = "30s";
+            }
+            {
+              name = "Kanto Loki";
+              uid = "kanto-loki";
+              type = "loki";
+              access = "proxy";
+              url = "http://vermilion.narwhal-snapper.ts.net:3030";
+            }
+            {
               name = "Sinnoh Alertmanager";
               uid = "sinnoh-alertmanager";
               type = "alertmanager";
