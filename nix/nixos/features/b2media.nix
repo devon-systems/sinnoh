@@ -91,7 +91,7 @@ _: {
     config = {
       sops.secrets.b2-mount-rclone = {
         sopsFile = "${self}/secrets/b2.yaml";
-        key = "rclone_config";
+        key = "rclone_media_config";
       };
 
       environment.systemPackages = [pkgs.rclone];
