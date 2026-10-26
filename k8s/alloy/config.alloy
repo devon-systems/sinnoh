@@ -63,7 +63,7 @@ prometheus.relabel "slingshot" {
   forward_to = [prometheus.remote_write.sinnoh.receiver]
 
   // The deployed DDSketch summaries collapse low percentiles.
-  // Keep their sum/count counters for means; use Traefik histograms for percentiles.
+  // Use their sum and count for means, and Traefik histograms for percentiles.
   rule {
     source_labels = ["quantile"]
     regex         = ".+"

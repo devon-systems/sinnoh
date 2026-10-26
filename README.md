@@ -15,8 +15,7 @@ See also [Hoenn](https://github.com/devon-systems/hoenn) for personal machines,
 | [`canalave`](nix/hosts/nixos/canalave/README.md)     | k3s agent and observability services     |
 
 Both hosts run NixOS on OpenStack and communicate over the `sinnoh` WireGuard
-interface. The cluster runs application, networking, certificate, database,
-backup, and secret resources.
+interface.
 
 Comin reconciles host configurations from `master`. Flux reconciles the
 Kubernetes resources in `k8s/flux-system/` from the same branch. OpenTofu
@@ -93,4 +92,4 @@ After changing `keys/`, run `just sops-rekey`. Commit `.sops.yaml` and all
 re-encrypted files together. Never commit decrypted secrets, private keys,
 OpenTofu state, or saved plans.
 
-This project is available under the [MIT License](LICENSE.md).
+Licensed under the [MIT License](LICENSE.md).
