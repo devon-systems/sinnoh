@@ -7,7 +7,7 @@ _: {
     keysDirectory = self + "/keys";
     alyKeyFiles = lib.pipe (builtins.readDir keysDirectory) [
       builtins.attrNames
-      (lib.filter (file: lib.hasPrefix "aly_" file))
+      (lib.filter (file: lib.hasPrefix "aly_" file && lib.hasSuffix ".pub" file))
       (lib.map (file: "${keysDirectory}/${file}"))
     ];
   in {
