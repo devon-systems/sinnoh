@@ -29,7 +29,7 @@ _: {
         configuration = {
           global = {
             smtp_smarthost = "smtp.resend.com:587";
-            smtp_from = "Sinnoh alerts <alerts@aly.social>";
+            smtp_from = "Cluster alerts <alerts@aly.social>";
             smtp_auth_username = "resend";
             smtp_auth_password_file = "/run/credentials/alertmanager.service/smtp-password";
             smtp_require_tls = true;
