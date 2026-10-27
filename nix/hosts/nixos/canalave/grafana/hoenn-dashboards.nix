@@ -421,7 +421,7 @@ _: {
           {
             title = "Log coverage by source";
             datasource = loki;
-            expr = ''sum by (job) (rate({cluster="hoenn"}[$__rate_interval]))'';
+            expr = ''sum by (job) (rate({cluster="hoenn"}[$__auto]))'';
             legend = "{{job}}";
             unit = "ops";
           }

@@ -401,7 +401,7 @@ _: {
         {
           title = "Log coverage by source";
           datasource = loki;
-          expr = ''sum by (job) (rate({cluster="kanto"}[$__rate_interval]))'';
+          expr = ''sum by (job) (rate({cluster="kanto"}[$__auto]))'';
           legend = "{{job}}";
           unit = "ops";
         }

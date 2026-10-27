@@ -599,7 +599,7 @@ _: {
         title = "Log coverage by source";
         datasource = loki;
         unit = "ops";
-        targets = [(target ''sum by(job) (rate({cluster="sinnoh"}[$__rate_interval]))'' "{{job}}")];
+        targets = [(target ''sum by(job) (rate({cluster="sinnoh"}[$__auto]))'' "{{job}}")];
       }
       {
         title = "Node textfile collection errors";

@@ -892,7 +892,7 @@ _: {
         title = "Log coverage by source";
         datasource = loki;
         unit = "ops";
-        targets = [(target ''sum by(job) (rate({cluster="johto"}[$__rate_interval]))'' "{{job}}")];
+        targets = [(target ''sum by(job) (rate({cluster="johto"}[$__auto]))'' "{{job}}")];
       }
       {
         title = "Node textfile collection errors";
