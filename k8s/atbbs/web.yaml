@@ -37,7 +37,7 @@ spec:
             capabilities:
               drop:
                 - NET_RAW
-          image: ghcr.io/alyraffauf/atbbs:latest@sha256:3604fe09392405f75ed7804b6230c1be29b908710aa54ac0ede8ae1a56812ad3
+          image: ghcr.io/alyraffauf/atbbs:latest@sha256:e58f9783fe98cc67d410ea2d18c065975c0f6a2214c4c7623195eef77f749487
           env:
             - name: PUBLIC_URL
               value: https://atbbs.aly.town
