@@ -22,6 +22,12 @@ metadata:
   namespace: kube-system
 spec:
   valuesContent: |-
+    deployment:
+      kind: DaemonSet
+    updateStrategy:
+      rollingUpdate:
+        maxSurge: 0
+        maxUnavailable: 1
     service:
       spec:
         externalTrafficPolicy: Local
