@@ -11,9 +11,7 @@ spec:
   dnsNames:
     - aly.codes
     - www.aly.codes
-    - status.aly.codes
     - switchyard.aly.codes
-    - vibes.aly.codes
 ---
 apiVersion: helm.cattle.io/v1
 kind: HelmChartConfig
