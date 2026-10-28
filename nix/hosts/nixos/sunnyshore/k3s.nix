@@ -7,6 +7,7 @@ _: {
       extraFlags = [
         "--node-ip=10.254.0.2"
         "--advertise-address=10.254.0.2"
+        "--kube-controller-manager-arg=terminated-pod-gc-threshold=10"
       ];
     };
 
