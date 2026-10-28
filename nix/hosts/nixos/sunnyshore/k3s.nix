@@ -42,7 +42,8 @@ _: {
       repository = "rclone:b2:aly-backups/sinnoh/sunnyshore/k3s-local-path";
       extraBackupArgs = [
         "--cleanup-cache"
-        "--exclude=/var/lib/rancher/k3s/storage/*_cnpg-system_pg-shared-1/**"
+        # CloudNativePG volumes are backed up by Barman.
+        "--exclude=/var/lib/rancher/k3s/storage/*_cnpg-system_*"
       ];
       initialize = true;
       passwordFile = config.sops.secrets.restic-password.path;
