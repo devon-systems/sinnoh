@@ -2,7 +2,13 @@
   description = "Production NixOS+K3s cluster.";
 
   inputs = {
-    wg-hoenn.url = "github:devon-systems/wg-hoenn";
+    wg-hoenn = {
+      url = "github:devon-systems/wg-hoenn";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.flake-parts.follows = "flake-parts";
+      inputs.import-tree.follows = "import-tree";
+      inputs.treefmt-nix.follows = "treefmt-nix";
+    };
     dvnpkgs.url = "github:devon-systems/dvnpkgs";
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     import-tree.url = "github:denful/import-tree";

@@ -17,7 +17,7 @@
     };
     wg-hoenn.privateKeyFile = config.sops.secrets.wireguard-hoenn-private.path;
     networking.firewall = {
-      allowedUDPPorts = [inputs.wg-hoenn.lib.network.listenPort];
+      allowedUDPPorts = [config.networking.wireguard.interfaces.hoenn.listenPort];
       trustedInterfaces = lib.mkBefore ["hoenn"];
     };
   };

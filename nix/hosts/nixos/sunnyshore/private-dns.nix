@@ -18,7 +18,7 @@ in {
           "  }"
           "}"
           ""
-          "hoenn:53 {"
+          "${network.domain}:53 {"
           "  bind 10.254.0.2 ${network.nodes.${network.hub}.address}"
           "  hosts {"
         ]
