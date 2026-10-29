@@ -1,30 +1,32 @@
-{lib, ...}: {
+{
+  inputs,
+  lib,
+  ...
+}: let
+  network = inputs.wg-hoenn.lib.network;
+  hoennHosts = lib.mapAttrsToList (name: node: "    ${node.address} ${name}.${network.domain}") network.nodes;
+in {
   flake.nixosModules.sunnyshore = {
     services.coredns = {
       enable = true;
-      config = lib.concatStringsSep "\n" [
-        "sinnoh:53 {"
-        "  bind 10.254.0.2 10.254.1.1"
-        "  hosts {"
-        "    10.254.0.2 sunnyshore.sinnoh"
-        "    10.254.0.3 canalave.sinnoh"
-        "  }"
-        "}"
-        ""
-        "hoenn:53 {"
-        "  bind 10.254.0.2 10.254.1.1"
-        "  hosts {"
-        "    10.254.1.9 lilycove.hoenn"
-        "    10.254.1.2 mauville.hoenn"
-        "    10.254.1.7 pacifidlog.hoenn"
-        "    10.254.1.8 petalburg.hoenn"
-        "    10.254.1.1 sunnyshore.hoenn"
-        "    10.254.1.3 rustboro.hoenn"
-        "    10.254.1.4 sootopolis.hoenn"
-        "    10.254.1.5 verdanturf.hoenn"
-        "  }"
-        "}"
-      ];
+      config = lib.concatStringsSep "\n" ([
+          "sinnoh:53 {"
+          "  bind 10.254.0.2 ${network.nodes.${network.hub}.address}"
+          "  hosts {"
+          "    10.254.0.2 sunnyshore.sinnoh"
+          "    10.254.0.3 canalave.sinnoh"
+          "  }"
+          "}"
+          ""
+          "hoenn:53 {"
+          "  bind 10.254.0.2 ${network.nodes.${network.hub}.address}"
+          "  hosts {"
+        ]
+        ++ hoennHosts
+        ++ [
+          "  }"
+          "}"
+        ]);
     };
 
     systemd.services.coredns = {
