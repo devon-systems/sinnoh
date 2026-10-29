@@ -52,6 +52,8 @@ spec:
           env:
             - name: BOBBIN_BIND
               value: "0.0.0.0:8090"
+            - name: BOBBIN_SERVICE_DID
+              value: "did:web:bobbin.aly.town"
             - name: BOBBIN_HYDRANT_URL
               value: "https://hydrant.cute.haus"
             - name: BOBBIN_SLINGSHOT_URL
