@@ -95,7 +95,7 @@ spec:
                 - sh
                 - -ec
                 - >-
-                  /health/busybox wget -qO- http://127.0.0.1:8090/xrpc/sh.tangled.bobbin.getCoverage
+                  /health/busybox wget -qO- http://127.0.0.1:8090/_ready
                   | /health/busybox grep -q '"ready":true'
             periodSeconds: 5
             timeoutSeconds: 3
