@@ -29,7 +29,7 @@ spec:
           type: RuntimeDefault
       initContainers:
         - name: readiness-tools
-          image: busybox:1.38.0-musl@sha256:119bdf19f884fb540a02b02534632c16525266957572e85996e377d5d41d3168
+          image: busybox:1.38.0-musl@sha256:fec1a451896b46904ea70824d256d46cb992530a731daf78259d1967e9828523
           command: ["/bin/busybox", "cp", "/bin/busybox", "/health/busybox"]
           securityContext:
             allowPrivilegeEscalation: false
