@@ -1,4 +1,4 @@
-_: {
+{inputs, ...}: {
   flake.nixosModules.backups = {
     config,
     lib,
@@ -7,11 +7,7 @@ _: {
   }: let
     directory = "/var/lib/sinnoh-backup-metrics";
     jobs = builtins.attrNames config.services.restic.backups;
-    reporter = pkgs.writeShellApplication {
-      name = "sinnoh-backup-metrics";
-      runtimeInputs = [pkgs.python3 pkgs.systemd pkgs.coreutils];
-      text = ''exec python3 ${../../../scripts/backup-metrics.py} "$@"'';
-    };
+    reporter = inputs.dvnpkgs.packages.${pkgs.stdenv.hostPlatform.system}.backup-metrics;
     command = "${lib.getExe reporter} --directory ${directory}";
   in {
     services.prometheus.exporters.node = {

@@ -31,7 +31,6 @@ k8s/                  Flux and application manifests
 secrets/              SOPS-encrypted host secrets
 keys/                 Public SOPS recipients
 terraform/            OpenTofu configuration for Cloudflare DNS
-scripts/              Maintenance tools
 ```
 
 `flake.nix` imports the flake-parts modules under `nix/` and exposes the
@@ -55,6 +54,8 @@ shared NixOS module:
 nix build .#nixosConfigurations.sunnyshore.config.system.build.toplevel
 nix build .#nixosConfigurations.canalave.config.system.build.toplevel
 ```
+
+Shared validation and metrics helpers come from the pinned dvnpkgs input.
 
 After Kubernetes changes, run `just check-k8s`. For OpenTofu changes, run
 `tofu -chdir=terraform init` on a fresh checkout, then run:

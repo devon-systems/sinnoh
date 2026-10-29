@@ -2,6 +2,7 @@
   description = "Production NixOS+K3s cluster.";
 
   inputs = {
+    dvnpkgs.url = "github:devon-systems/dvnpkgs";
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     import-tree.url = "github:denful/import-tree";
     flake-parts.url = "github:hercules-ci/flake-parts";
