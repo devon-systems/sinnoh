@@ -8,6 +8,7 @@ stores:
 keys:
   # === user keys (aly@<host>) ===
   - &user_aly_canalave age1zj2aq2a2v3ngcer7s3jz6pufhh8ula8pw56etmy28dy25wrkk3vq59hu2s
+  - &user_aly_fallarbor age1jfm7elg24lv8u0aw5ny8vdt6fcwhkzzmpzv9kxlrj9v3ng07ngcsdrgrj5
   - &user_aly_lilycove age1tdgfvwl4qdptyvgxju3rwz9uh45hz422txzcgsrwm4f4f96x558skzxklr
   - &user_aly_mauville age1876lthmlfq2aq6nm6z2qyu0ed4aa5ss68xvnlw5cqxcdtzslaqrqzgcmlm
   - &user_aly_petalburg age162sx8kppp90mjxw88eqs78hgnpkddf8k9kgtksmmexzvcdxknpkspmkgaf
@@ -24,6 +25,7 @@ creation_rules:
     key_groups:
       - age:
           - *user_aly_canalave
+          - *user_aly_fallarbor
           - *user_aly_lilycove
           - *user_aly_mauville
           - *user_aly_petalburg
@@ -36,6 +38,7 @@ creation_rules:
     key_groups:
       - age:
           - *user_aly_canalave
+          - *user_aly_fallarbor
           - *user_aly_lilycove
           - *user_aly_mauville
           - *user_aly_petalburg
