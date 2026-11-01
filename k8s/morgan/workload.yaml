@@ -37,7 +37,7 @@ spec:
             capabilities:
               drop:
                 - NET_RAW
-          image: ghcr.io/alyraffauf/morgantamayo.com:latest@sha256:6b77b9fab85f3fd30e7ef6a4b5fd369a540142573d02b45b81e00a775edb302a
+          image: ghcr.io/alyraffauf/morgantamayo.com:latest@sha256:6bf87ac9a86ed8300b667f68b075b435d523016d941f56a55a78ed1f07e9834c
           ports:
             - name: http
               containerPort: 80
