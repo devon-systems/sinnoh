@@ -27,7 +27,7 @@ spec:
             capabilities:
               drop:
                 - NET_RAW
-          image: ghcr.io/alyraffauf/atbbs-telnet:latest@sha256:2fa4f77e5a72af180159f0cc835bd9d510084cfd987be0f4236b475babfd374b
+          image: ghcr.io/alyraffauf/atbbs-telnet:latest@sha256:28f7fb3fd398d44b0ae250109a6253021d092973b972c38a6b17c0b54a77fc70
           ports:
             - name: telnet
               containerPort: 2323
