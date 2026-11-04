@@ -38,6 +38,7 @@ _: {
       };
     node = ''job="node",instance=~"$node"'';
     nodeVariable = variable "node" ''label_values(up{job="node"}, instance)'';
+    filesystemCapacityUsed = ''1 - node_filesystem_avail_bytes{${node},fstype!~"tmpfs|devtmpfs|overlay|squashfs",mountpoint!~"/var/lib/kubelet/.*"} / node_filesystem_size_bytes{${node},fstype!~"tmpfs|devtmpfs|overlay|squashfs",mountpoint!~"/var/lib/kubelet/.*"}'';
     overview = dashboard "sinnoh-overview" "Sinnoh overview" [nodeVariable] [
       {
         title = "Node exporter reachable";
@@ -53,53 +54,77 @@ _: {
       }
       {
         title = "CPU busy";
-        targets = [(target ''1 - avg by (instance) (rate(node_cpu_seconds_total{${node},mode="idle"}[$__rate_interval]))'' "{{instance}}")];
+        targets = [
+          (target ''1 - avg by (instance) (rate(node_cpu_seconds_total{${node},mode="idle"}[$__rate_interval]))'' "{{instance}}")
+        ];
         unit = "percentunit";
       }
       {
         title = "Available memory";
-        targets = [(target ''node_memory_MemAvailable_bytes{${node}}'' "{{instance}} available") (target ''node_memory_MemTotal_bytes{${node}}'' "{{instance}} total")];
+        targets = [
+          (target ''node_memory_MemAvailable_bytes{${node}}'' "{{instance}} available")
+          (target ''node_memory_MemTotal_bytes{${node}}'' "{{instance}} total")
+        ];
         unit = "bytes";
       }
       {
         title = "Memory cache and buffers";
-        targets = [(target ''node_memory_Cached_bytes{${node}} + node_memory_Buffers_bytes{${node}} + node_memory_SReclaimable_bytes{${node}}'' "{{instance}} cache + buffers + reclaimable slab")];
+        targets = [
+          (target ''node_memory_Cached_bytes{${node}} + node_memory_Buffers_bytes{${node}} + node_memory_SReclaimable_bytes{${node}}'' "{{instance}} cache + buffers + reclaimable slab")
+        ];
         unit = "bytes";
       }
       {
         title = "Swap used";
-        targets = [(target ''node_memory_SwapTotal_bytes{${node}} - node_memory_SwapFree_bytes{${node}}'' "{{instance}}")];
+        targets = [
+          (target ''node_memory_SwapTotal_bytes{${node}} - node_memory_SwapFree_bytes{${node}}'' "{{instance}}")
+        ];
         unit = "bytes";
       }
       {
         title = "Memory pressure";
-        targets = [(target ''rate(node_pressure_memory_waiting_seconds_total{${node}}[$__rate_interval])'' "{{instance}} some stalled") (target ''rate(node_pressure_memory_stalled_seconds_total{${node}}[$__rate_interval])'' "{{instance}} all stalled")];
+        targets = [
+          (target ''rate(node_pressure_memory_waiting_seconds_total{${node}}[$__rate_interval])'' "{{instance}} some stalled")
+          (target ''rate(node_pressure_memory_stalled_seconds_total{${node}}[$__rate_interval])'' "{{instance}} all stalled")
+        ];
         unit = "percentunit";
       }
       {
         title = "Filesystem capacity used";
-        targets = [(target ''1 - node_filesystem_avail_bytes{${node},fstype!~"tmpfs|devtmpfs|overlay|squashfs",mountpoint!~"/var/lib/kubelet/.*"} / node_filesystem_size_bytes{${node},fstype!~"tmpfs|devtmpfs|overlay|squashfs",mountpoint!~"/var/lib/kubelet/.*"}'' "{{instance}} {{mountpoint}}")];
+        targets = [
+          (target filesystemCapacityUsed "{{instance}} {{mountpoint}}")
+        ];
         unit = "percentunit";
       }
       {
         title = "Disk reads and writes";
-        targets = [(target ''rate(node_disk_read_bytes_total{${node},device!~"loop.*|ram.*"}[$__rate_interval])'' "{{instance}} {{device}} read") (target ''rate(node_disk_written_bytes_total{${node},device!~"loop.*|ram.*"}[$__rate_interval])'' "{{instance}} {{device}} write")];
+        targets = [
+          (target ''rate(node_disk_read_bytes_total{${node},device!~"loop.*|ram.*"}[$__rate_interval])'' "{{instance}} {{device}} read")
+          (target ''rate(node_disk_written_bytes_total{${node},device!~"loop.*|ram.*"}[$__rate_interval])'' "{{instance}} {{device}} write")
+        ];
         unit = "Bps";
       }
       {
         title = "Disk busy";
-        targets = [(target ''rate(node_disk_io_time_seconds_total{${node},device!~"loop.*|ram.*"}[$__rate_interval])'' "{{instance}} {{device}}")];
+        targets = [
+          (target ''rate(node_disk_io_time_seconds_total{${node},device!~"loop.*|ram.*"}[$__rate_interval])'' "{{instance}} {{device}}")
+        ];
         unit = "percentunit";
       }
       {
         title = "Network traffic";
-        targets = [(target ''rate(node_network_receive_bytes_total{${node},device!~"lo|veth.*|cali.*"}[$__rate_interval])'' "{{instance}} {{device}} receive") (target ''rate(node_network_transmit_bytes_total{${node},device!~"lo|veth.*|cali.*"}[$__rate_interval])'' "{{instance}} {{device}} transmit")];
+        targets = [
+          (target ''rate(node_network_receive_bytes_total{${node},device!~"lo|veth.*|cali.*"}[$__rate_interval])'' "{{instance}} {{device}} receive")
+          (target ''rate(node_network_transmit_bytes_total{${node},device!~"lo|veth.*|cali.*"}[$__rate_interval])'' "{{instance}} {{device}} transmit")
+        ];
         unit = "Bps";
       }
       {
         title = "Failed systemd services";
         type = "stat";
-        targets = [(target ''sum by (instance) (node_systemd_unit_state{${node},state="failed",name=~".+[.]service"})'' "{{instance}}")];
+        targets = [
+          (target ''sum by (instance) (node_systemd_unit_state{${node},state="failed",name=~".+[.]service"})'' "{{instance}}")
+        ];
       }
     ];
     ingressDirectory = ../../../../../k8s/ingress;
@@ -141,7 +166,9 @@ _: {
         title = "Response bandwidth";
         datasource = loki;
         unit = "Bps";
-        targets = [(target "sum(sum_over_time(${logs} | unwrap bytes | __error__=`` [$__interval])) / ($__interval_ms / 1000)" "Response bytes/s")];
+        targets = [
+          (target "sum(sum_over_time(${logs} | unwrap bytes | __error__=`` [$__interval])) / ($__interval_ms / 1000)" "Response bytes/s")
+        ];
         description = "Traefik DownstreamContentSize, excluding HTTP and transport overhead.";
       }
       {
@@ -154,7 +181,9 @@ _: {
         title = "5xx responses";
         datasource = loki;
         unit = "percentunit";
-        targets = [(target "(sum(rate(${logs} | status=~`5..` [$__interval])) or (${trafficRate} * 0)) / (${trafficRate})" "5xx share")];
+        targets = [
+          (target "(sum(rate(${logs} | status=~`5..` [$__interval])) or (${trafficRate} * 0)) / (${trafficRate})" "5xx share")
+        ];
         description = "Zero only when matching requests exist without server errors. Empty traffic has no percentage.";
       }
       {
@@ -183,13 +212,19 @@ _: {
             };
           }
         ];
-        targets = [(target "topk(20, sum by (host, path) (count_over_time(${logs} | keep host, path [$__range])))" "{{host}}{{path}}")];
+        targets = [
+          (target "topk(20, sum by (host, path) (count_over_time(${logs} | keep host, path [$__range])))" "{{host}}{{path}}")
+        ];
       }
     ];
     selectedPods = ''pod_workload_info{node=~"$node",namespace=~"$namespace",workload=~"$workload",pod=~"$pod"}'';
     container = ''job="cadvisor",container!="",container!="POD",image!="",namespace=~"$namespace",pod=~"$pod",node=~"$node"'';
     joinPods = expression: "(${expression}) * on (namespace, pod) group_left(workload, workload_kind) ${selectedPods}";
+    cpuThrottledRatio = ''sum by (namespace, pod, container) (rate(container_cpu_cfs_throttled_periods_total{${container}}[$__rate_interval])) / sum by (namespace, pod, container) (rate(container_cpu_cfs_periods_total{${container}}[$__rate_interval]))'';
+    activeContainerReadiness = ''kube_pod_container_status_ready{${kubeContainer}} and on (namespace, pod) (kube_pod_status_phase{${kubeContainer},phase=~"Pending|Running|Unknown"} == 1)'';
+    containerResourceLimits = resource: ''kube_pod_container_resource_limits{${kubeContainer},resource="${resource}"} or on (namespace, pod, container) (0 * kube_pod_container_info{${kubeContainer}} - 1)'';
     kubeContainer = ''job="kube-state-metrics",namespace=~"$namespace",pod=~"$pod"'';
+    nodeContainerRequests = resource: ''sum by (node) (kube_pod_container_resource_requests{job="kube-state-metrics",node=~"$node",resource="${resource}"} and on(namespace,pod) (kube_pod_status_phase{job="kube-state-metrics",phase=~"Running|Pending"} == 1))'';
     workloadVariable = variable "workload" ''label_values(pod_workload_info{node=~"$node",namespace=~"$namespace"}, workload)'';
     workloads =
       dashboard "sinnoh-kubernetes-workloads" "Kubernetes workloads" [
@@ -201,7 +236,11 @@ _: {
           {
             title = "Collector scrape health";
             type = "stat";
-            targets = [(target ''up{job=~"cadvisor|kube-state-metrics"}'' "{{job}} {{node}}") (target ''sum(up{job="cadvisor"}) == bool 2'' "Both kubelets reachable") (target ''kube_node_status_condition{job="kube-state-metrics",node=~"$node",condition="Ready",status="true"}'' "{{node}} Ready")];
+            targets = [
+              (target ''up{job=~"cadvisor|kube-state-metrics"}'' "{{job}} {{node}}")
+              (target ''sum(up{job="cadvisor"}) == bool 2'' "Both kubelets reachable")
+              (target ''kube_node_status_condition{job="kube-state-metrics",node=~"$node",condition="Ready",status="true"}'' "{{node}} Ready")
+            ];
             unit = "bool";
           }
           {
@@ -213,30 +252,40 @@ _: {
                 options.include.names = ["namespace" "workload" "pod" "node"];
               }
             ];
-            targets = [(target selectedPods "{{namespace}} / {{workload_kind}} {{workload}} / {{pod}} on {{node}}")];
+            targets = [
+              (target selectedPods "{{namespace}} / {{workload_kind}} {{workload}} / {{pod}} on {{node}}")
+            ];
             description = "One series per pod. ReplicaSet ownership resolves to its Deployment; Jobs remain individually selectable.";
           }
           {
             title = "Container CPU consumption";
             unit = "cores";
-            targets = [(target (joinPods ''sum by (namespace, pod, container) (rate(container_cpu_usage_seconds_total{${container}}[$__rate_interval]))'') "{{namespace}} / {{pod}} / {{container}}")];
+            targets = [
+              (target (joinPods ''sum by (namespace, pod, container) (rate(container_cpu_usage_seconds_total{${container}}[$__rate_interval]))'') "{{namespace}} / {{pod}} / {{container}}")
+            ];
           }
           {
             title = "CPU throttled periods";
             unit = "percentunit";
-            targets = [(target (joinPods ''sum by (namespace, pod, container) (rate(container_cpu_cfs_throttled_periods_total{${container}}[$__rate_interval])) / sum by (namespace, pod, container) (rate(container_cpu_cfs_periods_total{${container}}[$__rate_interval]))'') "{{pod}} / {{container}}")];
+            targets = [
+              (target (joinPods cpuThrottledRatio) "{{pod}} / {{container}}")
+            ];
             description = "Fraction of CFS periods throttled. An unset CPU limit may have no CFS series.";
           }
           {
             title = "Memory working set";
             unit = "bytes";
-            targets = [(target (joinPods ''sum by (namespace, pod, container) (container_memory_working_set_bytes{${container}})'') "{{pod}} / {{container}}")];
+            targets = [
+              (target (joinPods ''sum by (namespace, pod, container) (container_memory_working_set_bytes{${container}})'') "{{pod}} / {{container}}")
+            ];
             description = "cAdvisor working set excludes inactive file cache. It is distinct from RSS.";
           }
           {
             title = "Memory RSS";
             unit = "bytes";
-            targets = [(target (joinPods ''sum by (namespace, pod, container) (container_memory_rss{${container}})'') "{{pod}} / {{container}}")];
+            targets = [
+              (target (joinPods ''sum by (namespace, pod, container) (container_memory_rss{${container}})'') "{{pod}} / {{container}}")
+            ];
             description = "Resident anonymous and swap-cache memory as reported by cAdvisor, separate from working set.";
           }
         ]
@@ -247,7 +296,9 @@ _: {
               if resource == "cpu"
               then "cores"
               else "bytes";
-            targets = [(target (joinPods ''kube_pod_container_resource_requests{${kubeContainer},resource="${resource}"}'') "{{pod}} / {{container}}")];
+            targets = [
+              (target (joinPods ''kube_pod_container_resource_requests{${kubeContainer},resource="${resource}"}'') "{{pod}} / {{container}}")
+            ];
           }
           {
             title = "Container ${resource} limits";
@@ -262,7 +313,9 @@ _: {
               if resource == "cpu"
               then "cores"
               else "bytes";
-            targets = [(target (joinPods ''kube_pod_container_resource_limits{${kubeContainer},resource="${resource}"} or on (namespace, pod, container) (0 * kube_pod_container_info{${kubeContainer}} - 1)'') "{{pod}} / {{container}}")];
+            targets = [
+              (target (joinPods (containerResourceLimits resource)) "{{pod}} / {{container}}")
+            ];
             mappings = [
               {
                 type = "value";
@@ -280,18 +333,25 @@ _: {
               if resource == "cpu"
               then "cores"
               else "bytes";
-            targets = [(target ''kube_node_status_allocatable{job="kube-state-metrics",node=~"$node",resource="${resource}"}'' "{{node}} allocatable") (target ''sum by (node) (kube_pod_container_resource_requests{job="kube-state-metrics",node=~"$node",resource="${resource}"} and on(namespace,pod) (kube_pod_status_phase{job="kube-state-metrics",phase=~"Running|Pending"} == 1))'' "{{node}} requested")];
+            targets = [
+              (target ''kube_node_status_allocatable{job="kube-state-metrics",node=~"$node",resource="${resource}"}'' "{{node}} allocatable")
+              (target (nodeContainerRequests resource) "{{node}} requested")
+            ];
             description = "Node-wide totals ignore namespace, workload and pod filters. Container requests exclude pod overhead and init-container scheduling rules.";
           }
         ]) ["cpu" "memory"]
         ++ [
           {
             title = "Container restarts in selected range";
-            targets = [(target (joinPods ''increase(kube_pod_container_status_restarts_total{${kubeContainer}}[$__range])'') "{{pod}} / {{container}}")];
+            targets = [
+              (target (joinPods ''increase(kube_pod_container_status_restarts_total{${kubeContainer}}[$__range])'') "{{pod}} / {{container}}")
+            ];
           }
           {
             title = "OOM events in selected range";
-            targets = [(target (joinPods ''sum by (namespace, pod, container) (increase(container_oom_events_total{${container}}[$__range]))'') "{{pod}} / {{container}}")];
+            targets = [
+              (target (joinPods ''sum by (namespace, pod, container) (increase(container_oom_events_total{${container}}[$__range]))'') "{{pod}} / {{container}}")
+            ];
           }
           {
             title = "Last termination was OOMKilled";
@@ -302,7 +362,9 @@ _: {
                 options.include.names = ["namespace" "pod" "container" "Value"];
               }
             ];
-            targets = [(target (joinPods ''kube_pod_container_status_last_terminated_reason{${kubeContainer},reason="OOMKilled"}'') "{{pod}} / {{container}}")];
+            targets = [
+              (target (joinPods ''kube_pod_container_status_last_terminated_reason{${kubeContainer},reason="OOMKilled"}'') "{{pod}} / {{container}}")
+            ];
             description = "Last known termination reason, not an event count. No termination history shows Unknown.";
           }
           {
@@ -315,22 +377,35 @@ _: {
               }
             ];
             unit = "bool";
-            targets = [(target (joinPods ''kube_pod_container_status_ready{${kubeContainer}} and on (namespace, pod) (kube_pod_status_phase{${kubeContainer},phase=~"Pending|Running|Unknown"} == 1)'') "{{pod}} / {{container}}")];
+            targets = [
+              (target (joinPods activeContainerReadiness) "{{pod}} / {{container}}")
+            ];
             description = "Readiness of running, pending, and unknown pods. Retained succeeded and failed pods, including evicted pods, are excluded from current readiness.";
           }
           {
             title = "Desired and available deployment replicas";
-            targets = [(target ''kube_deployment_spec_replicas{job="kube-state-metrics",namespace=~"$namespace",deployment=~"$workload"}'' "{{namespace}} / {{deployment}} desired") (target ''kube_deployment_status_replicas_available{job="kube-state-metrics",namespace=~"$namespace",deployment=~"$workload"}'' "{{namespace}} / {{deployment}} available")];
+            targets = [
+              (target ''kube_deployment_spec_replicas{job="kube-state-metrics",namespace=~"$namespace",deployment=~"$workload"}'' "{{namespace}} / {{deployment}} desired")
+              (target ''kube_deployment_status_replicas_available{job="kube-state-metrics",namespace=~"$namespace",deployment=~"$workload"}'' "{{namespace}} / {{deployment}} available")
+            ];
             description = "Controller totals follow namespace and workload filters, including controllers with zero pods. Node and pod filters do not restrict these totals.";
           }
           {
             title = "StatefulSet and DaemonSet replicas";
-            targets = [(target ''kube_statefulset_replicas{job="kube-state-metrics",namespace=~"$namespace",statefulset=~"$workload"}'' "{{statefulset}} desired") (target ''kube_statefulset_status_replicas_ready{job="kube-state-metrics",namespace=~"$namespace",statefulset=~"$workload"}'' "{{statefulset}} ready") (target ''kube_daemonset_status_desired_number_scheduled{job="kube-state-metrics",namespace=~"$namespace",daemonset=~"$workload"}'' "{{daemonset}} desired") (target ''kube_daemonset_status_number_available{job="kube-state-metrics",namespace=~"$namespace",daemonset=~"$workload"}'' "{{daemonset}} available")];
+            targets = [
+              (target ''kube_statefulset_replicas{job="kube-state-metrics",namespace=~"$namespace",statefulset=~"$workload"}'' "{{statefulset}} desired")
+              (target ''kube_statefulset_status_replicas_ready{job="kube-state-metrics",namespace=~"$namespace",statefulset=~"$workload"}'' "{{statefulset}} ready")
+              (target ''kube_daemonset_status_desired_number_scheduled{job="kube-state-metrics",namespace=~"$namespace",daemonset=~"$workload"}'' "{{daemonset}} desired")
+              (target ''kube_daemonset_status_number_available{job="kube-state-metrics",namespace=~"$namespace",daemonset=~"$workload"}'' "{{daemonset}} available")
+            ];
             description = "Controller totals follow namespace and workload filters; node and pod filters do not apply.";
           }
           {
             title = "Job outcomes";
-            targets = [(target ''kube_job_status_succeeded{job="kube-state-metrics",namespace=~"$namespace",job_name=~"$workload"}'' "{{job_name}} succeeded") (target ''kube_job_status_failed{job="kube-state-metrics",namespace=~"$namespace",job_name=~"$workload"}'' "{{job_name}} failed")];
+            targets = [
+              (target ''kube_job_status_succeeded{job="kube-state-metrics",namespace=~"$namespace",job_name=~"$workload"}'' "{{job_name}} succeeded")
+              (target ''kube_job_status_failed{job="kube-state-metrics",namespace=~"$namespace",job_name=~"$workload"}'' "{{job_name}} failed")
+            ];
           }
           {
             title = "CronJob last successful completion";
@@ -342,7 +417,9 @@ _: {
               }
             ];
             unit = "dateTimeAsIso";
-            targets = [(target ''kube_cronjob_status_last_successful_time{job="kube-state-metrics",namespace=~"$namespace"} * 1000'' "{{namespace}} / {{cronjob}}")];
+            targets = [
+              (target ''kube_cronjob_status_last_successful_time{job="kube-state-metrics",namespace=~"$namespace"} * 1000'' "{{namespace}} / {{cronjob}}")
+            ];
             description = "Namespace-wide CronJobs, including those with no current pods. Missing completion remains Unknown.";
           }
         ]
@@ -368,7 +445,12 @@ _: {
         title = "Postgres scrape and database health";
         type = "stat";
         unit = "bool";
-        targets = [(target ''up{${pg}}'' "{{pod}} scrape") (target ''sum(up{${pg}}) == bool 2'' "Both Postgres instances reachable") (target ''cnpg_collector_up{${pg}}'' "{{pod}} database") (target ''1 - cnpg_collector_last_collection_error{${pg}}'' "{{pod}} collection healthy")];
+        targets = [
+          (target ''up{${pg}}'' "{{pod}} scrape")
+          (target ''sum(up{${pg}}) == bool 2'' "Both Postgres instances reachable")
+          (target ''cnpg_collector_up{${pg}}'' "{{pod}} database")
+          (target ''1 - cnpg_collector_last_collection_error{${pg}}'' "{{pod}} collection healthy")
+        ];
         description = "Scrape, database, and collection health should all be true. Missing instances are not healthy.";
       }
       {
@@ -397,16 +479,24 @@ _: {
       {
         title = "Replica lag";
         unit = "s";
-        targets = [(target ''cnpg_pg_replication_lag{${pg}} and on(pod) (cnpg_pg_replication_in_recovery{${pg}} == 1)'' "{{pod}}")];
+        targets = [
+          (target ''cnpg_pg_replication_lag{${pg}} and on(pod) (cnpg_pg_replication_in_recovery{${pg}} == 1)'' "{{pod}}")
+        ];
       }
       {
         title = "Streaming replication";
-        targets = [(target ''cnpg_pg_replication_streaming_replicas{${pg}} and on(pod) (cnpg_pg_replication_in_recovery{${pg}} == 0)'' "{{pod}} connected replicas") (target ''cnpg_pg_replication_is_wal_receiver_up{${pg}} and on(pod) (cnpg_pg_replication_in_recovery{${pg}} == 1)'' "{{pod}} WAL receiver up")];
+        targets = [
+          (target ''cnpg_pg_replication_streaming_replicas{${pg}} and on(pod) (cnpg_pg_replication_in_recovery{${pg}} == 0)'' "{{pod}} connected replicas")
+          (target ''cnpg_pg_replication_is_wal_receiver_up{${pg}} and on(pod) (cnpg_pg_replication_in_recovery{${pg}} == 1)'' "{{pod}} WAL receiver up")
+        ];
       }
       {
         title = "WAL archiving outcomes";
         unit = "ops";
-        targets = [(target ''rate(cnpg_pg_stat_archiver_archived_count{${pg}}[$__rate_interval])'' "{{pod}} archived/s") (target ''rate(cnpg_pg_stat_archiver_failed_count{${pg}}[$__rate_interval])'' "{{pod}} failed/s")];
+        targets = [
+          (target ''rate(cnpg_pg_stat_archiver_archived_count{${pg}}[$__rate_interval])'' "{{pod}} archived/s")
+          (target ''rate(cnpg_pg_stat_archiver_failed_count{${pg}}[$__rate_interval])'' "{{pod}} failed/s")
+        ];
       }
       {
         title = "Last WAL archive age";
@@ -417,13 +507,17 @@ _: {
         title = "Latest available database backup";
         type = "stat";
         unit = "dateTimeAsIso";
-        targets = [(target ''(barman_cloud_cloudnative_pg_io_last_available_backup_timestamp{${pg}} > 0) * 1000'' "{{pod}}")];
+        targets = [
+          (target ''(barman_cloud_cloudnative_pg_io_last_available_backup_timestamp{${pg}} > 0) * 1000'' "{{pod}}")
+        ];
       }
       {
         title = "Latest failed database backup";
         type = "stat";
         unit = "dateTimeAsIso";
-        targets = [(target ''barman_cloud_cloudnative_pg_io_last_failed_backup_timestamp{${pg}} * 1000'' "{{pod}}")];
+        targets = [
+          (target ''barman_cloud_cloudnative_pg_io_last_failed_backup_timestamp{${pg}} * 1000'' "{{pod}}")
+        ];
         mappings = [
           {
             type = "value";
@@ -436,13 +530,17 @@ _: {
         type = "stat";
         unit = "s";
         thresholds = backupAge;
-        targets = [(target ''time() - (barman_cloud_cloudnative_pg_io_last_available_backup_timestamp{${pg}} > 0)'' "{{pod}}")];
+        targets = [
+          (target ''time() - (barman_cloud_cloudnative_pg_io_last_available_backup_timestamp{${pg}} > 0)'' "{{pod}}")
+        ];
       }
       {
         title = "Recovery-window start";
         type = "stat";
         unit = "dateTimeAsIso";
-        targets = [(target ''(barman_cloud_cloudnative_pg_io_first_recoverability_point{${pg}} > 0) * 1000'' "{{pod}}")];
+        targets = [
+          (target ''(barman_cloud_cloudnative_pg_io_first_recoverability_point{${pg}} > 0) * 1000'' "{{pod}}")
+        ];
         description = "Earliest recoverable point reported by the Barman plugin. Backup availability does not prove a successful restore.";
       }
       {
@@ -467,7 +565,10 @@ _: {
         title = "Host backup reporting health";
         type = "stat";
         unit = "bool";
-        targets = [(target ''up{${backup}}'' "{{instance}} exporter reachable") (target ''1 - node_textfile_scrape_error{${backup}}'' "{{instance}} textfile healthy")];
+        targets = [
+          (target ''up{${backup}}'' "{{instance}} exporter reachable")
+          (target ''1 - node_textfile_scrape_error{${backup}}'' "{{instance}} textfile healthy")
+        ];
         description = "Exporter reachable and textfile healthy should both be true. The node selector applies only to host backup panels.";
       }
       {
@@ -487,7 +588,9 @@ _: {
         ];
         unit = "s";
         thresholds = backupAge;
-        targets = [(target ''time() - restic_backup_last_success_timestamp_seconds{${backup}}'' "{{instance}} / {{backup}}")];
+        targets = [
+          (target ''time() - restic_backup_last_success_timestamp_seconds{${backup}}'' "{{instance}} / {{backup}}")
+        ];
         description = "Warning after 28 hours, critical after 48 hours. Unknown until a successful completion is observed or seeded from systemd.";
       }
       {
@@ -539,7 +642,9 @@ _: {
           }
         ];
         unit = "dateTimeAsIso";
-        targets = [(target ''restic_backup_last_completion_timestamp_seconds{${backup}} * 1000'' "{{instance}} / {{backup}}")];
+        targets = [
+          (target ''restic_backup_last_completion_timestamp_seconds{${backup}} * 1000'' "{{instance}} / {{backup}}")
+        ];
       }
       {
         title = "Host backup last success";
@@ -557,14 +662,19 @@ _: {
           }
         ];
         unit = "dateTimeAsIso";
-        targets = [(target ''restic_backup_last_success_timestamp_seconds{${backup}} * 1000'' "{{instance}} / {{backup}}")];
+        targets = [
+          (target ''restic_backup_last_success_timestamp_seconds{${backup}} * 1000'' "{{instance}} / {{backup}}")
+        ];
       }
     ];
+    logHeartbeat = host: ''sum(count_over_time({cluster="sinnoh",job="systemd-journal",host="${host}",unit="observability-canary.service"} |= "observability_canary" [5m])) or vector(0)'';
     reporting = dashboard "sinnoh-observability" "Reporting health" [nodeVariable (variable "namespace" ''label_values(kube_pod_info, namespace)'')] [
       {
         title = "Monitoring scrape availability";
         type = "table";
-        targets = [(target ''up{job=~"prometheus|loki|alloy-host|alloy-kubernetes"}'' "{{job}} / {{instance}}")];
+        targets = [
+          (target ''up{job=~"prometheus|loki|alloy-host|alloy-kubernetes"}'' "{{job}} / {{instance}}")
+        ];
         description = "Scrape results for backends and collectors. Missing data is Unknown; it does not prove that every expected source exists.";
       }
       {
@@ -580,19 +690,26 @@ _: {
       {
         title = "Dropped log entries";
         unit = "ops";
-        targets = [(target ''sum by(job,instance) (rate(loki_write_dropped_entries_total[$__rate_interval]))'' "{{job}} / {{instance}}")];
+        targets = [
+          (target ''sum by(job,instance) (rate(loki_write_dropped_entries_total[$__rate_interval]))'' "{{job}} / {{instance}}")
+        ];
         description = "Entries abandoned after delivery retries. Missing counters are Unknown, not proof that no logs were lost.";
       }
       {
         title = "Monitoring memory";
         unit = "bytes";
-        targets = [(target ''process_resident_memory_bytes{job=~"prometheus|loki|alloy-host|alloy-kubernetes"}'' "{{job}} / {{instance}}")];
+        targets = [
+          (target ''process_resident_memory_bytes{job=~"prometheus|loki|alloy-host|alloy-kubernetes"}'' "{{job}} / {{instance}}")
+        ];
       }
       {
         title = "Host log heartbeats in the last five minutes";
         type = "stat";
         datasource = loki;
-        targets = [(target ''sum(count_over_time({cluster="sinnoh",job="systemd-journal",host="canalave",unit="observability-canary.service"} |= "observability_canary" [5m])) or vector(0)'' "canalave") (target ''sum(count_over_time({cluster="sinnoh",job="systemd-journal",host="sunnyshore",unit="observability-canary.service"} |= "observability_canary" [5m])) or vector(0)'' "sunnyshore")];
+        targets = [
+          (target (logHeartbeat "canalave") "canalave")
+          (target (logHeartbeat "sunnyshore") "sunnyshore")
+        ];
         description = "Each configured host emits one heartbeat per minute. Zero means none arrived in five minutes; a query failure remains Unknown.";
       }
       {
@@ -610,14 +727,18 @@ _: {
         title = "Application and host logs";
         type = "logs";
         datasource = loki;
-        targets = [(target ''{cluster="sinnoh",job!="kubernetes-events",node=~"$node",namespace=~"$namespace"}'' "")];
+        targets = [
+          (target ''{cluster="sinnoh",job!="kubernetes-events",node=~"$node",namespace=~"$namespace"}'' "")
+        ];
         description = "Select a node or namespace to narrow the investigation. Host journals have no namespace.";
       }
       {
         title = "Kubernetes warning events";
         type = "logs";
         datasource = loki;
-        targets = [(target ''{cluster="sinnoh",job="kubernetes-events",namespace=~"$namespace"} | json | type="Warning"'' "")];
+        targets = [
+          (target ''{cluster="sinnoh",job="kubernetes-events",namespace=~"$namespace"} | json | type="Warning"'' "")
+        ];
       }
     ];
   in {

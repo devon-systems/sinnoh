@@ -10,6 +10,12 @@
     then throw "Grafana data source not configured: ${name}"
     else {inherit (datasource) type uid;};
   target = expr: legendFormat: {inherit expr legendFormat;};
+  # A panel specification requires `title` plus either `targets` (built
+  # with `target`) or `expr`, whose `legend` defaults to "{{instance}}".
+  # Optional fields:
+  # type (default "timeseries"), datasource, id, description,
+  # transformations, gridPos, unit (default "short"), mappings,
+  # thresholds, and sortBy (tables only).
   panel = defaultDatasource: index: specification: let
     type = specification.type or "timeseries";
     datasource = specification.datasource or defaultDatasource;

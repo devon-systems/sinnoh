@@ -21,6 +21,7 @@ _: {
     fetchMean = kind: ''sum(rate(slingshot_fetch_${kind}_sum{job="slingshot",success="true"}[$__rate_interval])) / sum(rate(slingshot_fetch_${kind}_count{job="slingshot",success="true"}[$__rate_interval]))'';
     resources = ''job="kube-state-metrics",namespace="slingshot",container="slingshot"'';
     containers = ''job="cadvisor",namespace="slingshot",container="slingshot",image!=""'';
+    ingressHttpFailures = ''sum by (code) (rate(traefik_router_requests_total{job="traefik",router=~"(web-|websecure-)?slingshot-slingshot-slingshot-aly-town@kubernetes",code=~"[45].."}[$__rate_interval]))'';
 
     dashboard = helpers.dashboard datasource {
       uid = "sinnoh-slingshot";
@@ -217,7 +218,9 @@ _: {
             y = 36;
           };
           unit = "Bps";
-          targets = [(target ''sum by (compressed) (rate(jetstream_total_bytes_received{job="slingshot"}[$__rate_interval]))'' "Compressed={{compressed}}")];
+          targets = [
+            (target ''sum by (compressed) (rate(jetstream_total_bytes_received{job="slingshot"}[$__rate_interval]))'' "Compressed={{compressed}}")
+          ];
         }
         {
           id = 14;
@@ -256,7 +259,9 @@ _: {
             y = 44;
           };
           unit = "reqps";
-          targets = [(target ''sum by (code) (rate(traefik_router_requests_total{job="traefik",router=~"(web-|websecure-)?slingshot-slingshot-slingshot-aly-town@kubernetes",code=~"[45].."}[$__rate_interval]))'' "HTTP {{code}}")];
+          targets = [
+            (target ingressHttpFailures "HTTP {{code}}")
+          ];
         }
         {
           id = 17;
@@ -298,7 +303,9 @@ _: {
             y = 60;
           };
           unit = "short";
-          targets = [(target ''sum by (pod) (increase(kube_pod_container_status_restarts_total{${resources}}[1h]))'' "{{pod}}")];
+          targets = [
+            (target ''sum by (pod) (increase(kube_pod_container_status_restarts_total{${resources}}[1h]))'' "{{pod}}")
+          ];
         }
         {
           id = 20;
@@ -309,7 +316,9 @@ _: {
             y = 60;
           };
           unit = "bool";
-          targets = [(target ''max by (pod, reason) (kube_pod_container_status_last_terminated_reason{${resources}}) == 1'' "{{pod}} · {{reason}}")];
+          targets = [
+            (target ''max by (pod, reason) (kube_pod_container_status_last_terminated_reason{${resources}}) == 1'' "{{pod}} · {{reason}}")
+          ];
         }
       ];
     };

@@ -109,7 +109,9 @@ _: {
             title = "Repository fetches per second";
             unit = "ops";
             description = "Fetch activity by repository and result. Counter resets are handled by rate().";
-            targets = [(target ''rate(comin_fetch_count{${selector}}[$__rate_interval])'' "{{host}} {{remote_name}} {{status}}")];
+            targets = [
+              (target ''rate(comin_fetch_count{${selector}}[$__rate_interval])'' "{{host}} {{remote_name}} {{status}}")
+            ];
           }
           {
             title = "Comin logs";

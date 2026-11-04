@@ -1,4 +1,8 @@
-{target}: [
+{target}: let
+  fluxSuspension = ''label_replace(gotk_resource_info{job="kube-state-metrics",exported_namespace=~"$namespace",suspended=""}, "suspended", "false", "suspended", ".*") or gotk_resource_info{job="kube-state-metrics",exported_namespace=~"$namespace",suspended!=""}'';
+  fluxPendingGenerations = ''clamp_min(gotk_resource_generation{job="kube-state-metrics",exported_namespace=~"$namespace"} - gotk_resource_observed_generation{job="kube-state-metrics",exported_namespace=~"$namespace"}, 0)'';
+  fluxReconciliationDurationP95 = ''histogram_quantile(0.95, sum by (le,kind,name,namespace) (rate(gotk_reconcile_duration_seconds_bucket{job="flux",namespace=~"$namespace"}[$__rate_interval])))'';
+in [
   {
     title = "Flux readiness";
     type = "table";
@@ -9,7 +13,9 @@
       }
     ];
     unit = "short";
-    targets = [(target ''gotk_resource_info{job="kube-state-metrics",exported_namespace=~"$namespace"}'' "{{customresource_kind}} {{name}} {{controller}}")];
+    targets = [
+      (target ''gotk_resource_info{job="kube-state-metrics",exported_namespace=~"$namespace"}'' "{{customresource_kind}} {{name}} {{controller}}")
+    ];
     description = "Flux panels follow namespace only. Readiness and suspension come from resource state; missing state remains Unknown.";
   }
 
@@ -23,7 +29,9 @@
       }
     ];
     unit = "short";
-    targets = [(target ''label_replace(gotk_resource_info{job="kube-state-metrics",exported_namespace=~"$namespace",suspended=""}, "suspended", "false", "suspended", ".*") or gotk_resource_info{job="kube-state-metrics",exported_namespace=~"$namespace",suspended!=""}'' "{{customresource_kind}} {{name}} {{controller}}")];
+    targets = [
+      (target fluxSuspension "{{customresource_kind}} {{name}} {{controller}}")
+    ];
     description = "Flux panels follow namespace only. Readiness and suspension come from resource state; missing state remains Unknown.";
   }
 
@@ -37,7 +45,9 @@
       }
     ];
     unit = "short";
-    targets = [(target ''clamp_min(gotk_resource_generation{job="kube-state-metrics",exported_namespace=~"$namespace"} - gotk_resource_observed_generation{job="kube-state-metrics",exported_namespace=~"$namespace"}, 0)'' "{{customresource_kind}} {{name}} {{controller}}")];
+    targets = [
+      (target fluxPendingGenerations "{{customresource_kind}} {{name}} {{controller}}")
+    ];
     description = "Flux panels follow namespace only. Readiness and suspension come from resource state; missing state remains Unknown.";
   }
 
@@ -45,7 +55,9 @@
     title = "Flux reconciliation failures";
     type = "timeseries";
     unit = "short";
-    targets = [(target ''sum by (controller) (increase(controller_runtime_reconcile_total{job="flux",result="error"}[$__range]))'' "{{controller}}")];
+    targets = [
+      (target ''sum by (controller) (increase(controller_runtime_reconcile_total{job="flux",result="error"}[$__range]))'' "{{controller}}")
+    ];
     description = "Errors cover all namespaces and are grouped by controller.";
   }
 
@@ -53,7 +65,9 @@
     title = "Flux reconciliation duration p95";
     type = "timeseries";
     unit = "s";
-    targets = [(target ''histogram_quantile(0.95, sum by (le,kind,name,namespace) (rate(gotk_reconcile_duration_seconds_bucket{job="flux",namespace=~"$namespace"}[$__rate_interval])))'' "{{kind}} {{namespace}}/{{name}}")];
+    targets = [
+      (target fluxReconciliationDurationP95 "{{kind}} {{namespace}}/{{name}}")
+    ];
     description = "Reconciliation duration follows the namespace filter.";
   }
   {

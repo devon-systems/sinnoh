@@ -18,6 +18,10 @@ _: {
     backup = ''job="node",instance=~"$host",backup=~"$backup"'';
     btrfs = ''job="node",instance=~"$host",filesystem=~"$filesystem"'';
     btrfsAvailable = ''and on (host) (btrfs_collector_success{${node}} == 1 and (time() - btrfs_collector_last_run_timestamp_seconds{${node}} < 900))'';
+    macosMemoryUsage = ''(node_memory_active_bytes{${node}} + node_memory_wired_bytes{${node}} + node_memory_compressed_bytes{${node}}) / node_memory_total_bytes{${node}}'';
+    containerCpuConsumption = ''sum by (namespace, pod, container) (rate(container_cpu_usage_seconds_total{job="cadvisor",container!="",container!="POD",namespace=~"$namespace",pod=~"$pod",node=~"$node"}[$__rate_interval]))'';
+    activeContainerReadiness = ''kube_pod_container_status_ready{job="kube-state-metrics",namespace=~"$namespace",pod=~"$pod"} and on (namespace,pod) (kube_pod_status_phase{job="kube-state-metrics",phase=~"Running|Pending|Unknown"} == 1)'';
+    failedMetricDeliveries = ''sum by (job,instance) (rate(prometheus_remote_storage_samples_failed_total{job=~"alloy-host|alloy-kubernetes",instance=~"$host|alloy"}[$__rate_interval]))'';
     panel = helpers.panel prometheus;
     variable = helpers.variable prometheus;
     dashboard = helpers.dashboard prometheus {
@@ -47,7 +51,7 @@ _: {
         }
         {
           title = "macOS memory usage";
-          expr = ''(node_memory_active_bytes{${node}} + node_memory_wired_bytes{${node}} + node_memory_compressed_bytes{${node}}) / node_memory_total_bytes{${node}}'';
+          expr = macosMemoryUsage;
           unit = "percentunit";
         }
         {
@@ -343,7 +347,7 @@ _: {
             }
             {
               title = "Container CPU consumption";
-              expr = ''sum by (namespace, pod, container) (rate(container_cpu_usage_seconds_total{job="cadvisor",container!="",container!="POD",namespace=~"$namespace",pod=~"$pod",node=~"$node"}[$__rate_interval]))'';
+              expr = containerCpuConsumption;
               legend = "{{namespace}} {{pod}} {{container}}";
               unit = "cores";
             }
@@ -360,13 +364,16 @@ _: {
             }
             {
               title = "Active container readiness";
-              expr = ''kube_pod_container_status_ready{job="kube-state-metrics",namespace=~"$namespace",pod=~"$pod"} and on (namespace,pod) (kube_pod_status_phase{job="kube-state-metrics",phase=~"Running|Pending|Unknown"} == 1)'';
+              expr = activeContainerReadiness;
               legend = "{{namespace}} {{pod}} {{container}}";
               unit = "bool";
             }
             {
               title = "Deployment replicas";
-              targets = [(target ''kube_deployment_spec_replicas{job="kube-state-metrics",namespace=~"$namespace"}'' "{{namespace}} {{deployment}} desired") (target ''kube_deployment_status_replicas_available{job="kube-state-metrics",namespace=~"$namespace"}'' "{{namespace}} {{deployment}} available")];
+              targets = [
+                (target ''kube_deployment_spec_replicas{job="kube-state-metrics",namespace=~"$namespace"}'' "{{namespace}} {{deployment}} desired")
+                (target ''kube_deployment_status_replicas_available{job="kube-state-metrics",namespace=~"$namespace"}'' "{{namespace}} {{deployment}} available")
+              ];
             }
             {
               title = "Pod logs";
@@ -402,7 +409,7 @@ _: {
           }
           {
             title = "Failed metric deliveries";
-            expr = ''sum by (job,instance) (rate(prometheus_remote_storage_samples_failed_total{job=~"alloy-host|alloy-kubernetes",instance=~"$host|alloy"}[$__rate_interval]))'';
+            expr = failedMetricDeliveries;
             legend = "{{job}} {{instance}}";
             unit = "ops";
           }

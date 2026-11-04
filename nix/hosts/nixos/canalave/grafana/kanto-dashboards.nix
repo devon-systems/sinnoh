@@ -20,6 +20,10 @@ _: {
     hostVariable = variable "host" ''label_values(up{job="node"}, instance)'';
     chipName = ''* on (instance, chip) group_left(chip_name) node_hwmon_chip_names{${node}}'';
     inferenceUnits = ''name=~"lemond.service|ollama.service|comfyui.service"'';
+    filesystemCapacityUsed = ''1 - node_filesystem_avail_bytes{${node},fstype!~"tmpfs|ramfs",mountpoint!="/nix/store"} / node_filesystem_size_bytes{${node},fstype!~"tmpfs|ramfs",mountpoint!="/nix/store"}'';
+    containerCpuConsumption = ''sum by (namespace, pod, container) (rate(container_cpu_usage_seconds_total{job="cadvisor",container!="",container!="POD",namespace=~"$namespace",pod=~"$pod",node=~"$node"}[$__rate_interval]))'';
+    activeContainerReadiness = ''kube_pod_container_status_ready{job="kube-state-metrics",namespace=~"$namespace",pod=~"$pod"} and on (namespace,pod) (kube_pod_status_phase{job="kube-state-metrics",phase=~"Running|Pending|Unknown"} == 1)'';
+    failedMetricDeliveries = ''sum by (job,instance) (rate(prometheus_remote_storage_samples_failed_total{job=~"alloy-host|alloy-kubernetes",instance=~"$host|alloy"}[$__rate_interval]))'';
     dashboard = specification:
       helpers.dashboard prometheus ({
           description = "Kanto telemetry from Vermilion, collected every 30 seconds. Unknown means telemetry is absent, not healthy.";
@@ -77,7 +81,7 @@ _: {
         }
         {
           title = "Filesystem space used";
-          expr = ''1 - node_filesystem_avail_bytes{${node},fstype!~"tmpfs|ramfs",mountpoint!="/nix/store"} / node_filesystem_size_bytes{${node},fstype!~"tmpfs|ramfs",mountpoint!="/nix/store"}'';
+          expr = filesystemCapacityUsed;
           legend = "{{instance}} {{mountpoint}}";
           description = "/, /home, and /nix are subvolumes of one Btrfs filesystem, so they report the same usage.";
           unit = "percentunit";
@@ -227,7 +231,7 @@ _: {
           }
           {
             title = "Container CPU consumption";
-            expr = ''sum by (namespace, pod, container) (rate(container_cpu_usage_seconds_total{job="cadvisor",container!="",container!="POD",namespace=~"$namespace",pod=~"$pod",node=~"$node"}[$__rate_interval]))'';
+            expr = containerCpuConsumption;
             legend = "{{namespace}} {{pod}} {{container}}";
             unit = "cores";
           }
@@ -244,13 +248,16 @@ _: {
           }
           {
             title = "Active container readiness";
-            expr = ''kube_pod_container_status_ready{job="kube-state-metrics",namespace=~"$namespace",pod=~"$pod"} and on (namespace,pod) (kube_pod_status_phase{job="kube-state-metrics",phase=~"Running|Pending|Unknown"} == 1)'';
+            expr = activeContainerReadiness;
             legend = "{{namespace}} {{pod}} {{container}}";
             unit = "bool";
           }
           {
             title = "Deployment replicas";
-            targets = [(target ''kube_deployment_spec_replicas{job="kube-state-metrics",namespace=~"$namespace"}'' "{{namespace}} {{deployment}} desired") (target ''kube_deployment_status_replicas_available{job="kube-state-metrics",namespace=~"$namespace"}'' "{{namespace}} {{deployment}} available")];
+            targets = [
+              (target ''kube_deployment_spec_replicas{job="kube-state-metrics",namespace=~"$namespace"}'' "{{namespace}} {{deployment}} desired")
+              (target ''kube_deployment_status_replicas_available{job="kube-state-metrics",namespace=~"$namespace"}'' "{{namespace}} {{deployment}} available")
+            ];
           }
           {
             title = "Pod logs";
@@ -381,7 +388,7 @@ _: {
         }
         {
           title = "Failed metric deliveries";
-          expr = ''sum by (job,instance) (rate(prometheus_remote_storage_samples_failed_total{job=~"alloy-host|alloy-kubernetes",instance=~"$host|alloy"}[$__rate_interval]))'';
+          expr = failedMetricDeliveries;
           legend = "{{job}} {{instance}}";
           unit = "ops";
         }
