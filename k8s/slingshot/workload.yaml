@@ -27,7 +27,7 @@ spec:
             capabilities:
               drop:
                 - NET_RAW
-          image: ghcr.io/alyraffauf/slingshot:latest@sha256:730c6f74da95fe9ee7a19bb133e66c0678c0ec320e64a161ad80fd8649b45d3e
+          image: ghcr.io/alyraffauf/slingshot:latest@sha256:a14202a86c0271c0e67c56a69b58c88e4a72a2212db410ebcff5a421e0a2ec74
           env:
             - name: SLINGSHOT_COLLECT_METRICS
               value: "true"
