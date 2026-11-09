@@ -4,15 +4,10 @@ _: {
       age
       duf
       dust
-      eza
-      fzf
       htop
       just
-      neovim
-      ripgrep
       starship
       tmux
-      zoxide
     ];
   };
 }
