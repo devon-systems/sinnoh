@@ -6,7 +6,6 @@ _: {
       dust
       htop
       just
-      starship
       tmux
     ];
   };
