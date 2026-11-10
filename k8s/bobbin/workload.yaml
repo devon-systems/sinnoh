@@ -48,7 +48,7 @@ spec:
               mountPath: /health
       containers:
         - name: bobbin
-          image: ghcr.io/alyraffauf/bobbin:latest@sha256:6127f7252e665c35d6a3d89a3567020f1d71ebe11757b2ba290a81cce057aaed
+          image: ghcr.io/alyraffauf/bobbin:latest@sha256:2910d50c20c80ed1b0104f9944b9209feb8292318c28213906b42b8972f03c70
           env:
             - name: BOBBIN_BIND
               value: "0.0.0.0:8090"
