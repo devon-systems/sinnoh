@@ -59,6 +59,17 @@ spec:
           port: 53
         - protocol: TCP
           port: 53
+    # aly.social is a local PDS reached through the public HTTPS ingress.
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
+      ports:
+        - protocol: TCP
+          port: 8443
     # BBS data lives on public AT Protocol services and user-selected PDS hosts.
     - to:
         - ipBlock:
