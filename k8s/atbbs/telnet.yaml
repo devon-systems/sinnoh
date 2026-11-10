@@ -18,15 +18,19 @@ spec:
       automountServiceAccountToken: false
       enableServiceLinks: false
       securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
         seccompProfile:
           type: RuntimeDefault
       containers:
         - name: atbbs-telnet
           securityContext:
             allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
             capabilities:
               drop:
-                - NET_RAW
+                - ALL
           image: ghcr.io/alyraffauf/atbbs-telnet:latest@sha256:3361f6155317eec01da08069f7b2dd6b614dfba37e6c67b3ccc14036ac9c4bb4
           ports:
             - name: telnet
