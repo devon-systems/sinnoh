@@ -69,6 +69,8 @@ spec:
               value: resend
             - name: MAX_CONCURRENT_REPO_EXPORTS
               value: "2"
+            - name: PDS_AGE_ASSURANCE_OVERRIDE
+              value: "true"
             - name: PDS_HOSTNAME
               value: aly.social
             - name: PDS_USER_HANDLE_DOMAINS
