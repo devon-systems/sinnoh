@@ -37,7 +37,7 @@ spec:
             capabilities:
               drop:
                 - NET_RAW
-          image: ghcr.io/alyraffauf/skytrace:latest@sha256:bf5ba5867fd975e2c4081235b5cf346bd4ff3a33d8c7945437dd88a35b33f3a3
+          image: ghcr.io/alyraffauf/skytrace:latest@sha256:f003899b4df204a7fd3e28b5d0881f8c8375eabe8006954e1642156375a7c724
           env:
             - name: SKYTRACE_DONATE_REMINDER_DAYS
               value: "14"
