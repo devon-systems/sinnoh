@@ -39,6 +39,8 @@ spec:
                 - NET_RAW
           image: ghcr.io/alyraffauf/skytrace:latest@sha256:b69e37a16c71822a4936ec81060dcb3c055827a536b1b4a130f375df08c89625
           env:
+            - name: SKYTRACE_MIN_LIST_BLOCKING
+              value: "5"
             - name: SKYTRACE_DONATE_REMINDER_DAYS
               value: "14"
             - name: SKYTRACE_BLOCK_TARGET_DID
