@@ -139,3 +139,41 @@ tests:
             value: 2
           - labels: '{code="503"}'
             value: 1
+  - name: ReplicaSet without a Deployment keeps its pod visible
+    interval: 30s
+    input_series:
+      - series: 'kube_pod_owner{job="kube-state-metrics",cluster="local",namespace="tools",pod="web-a",owner_kind="ReplicaSet",owner_name="web-123",owner_is_controller="true"}'
+        values: "1+0x2"
+      - series: 'kube_pod_info{job="kube-state-metrics",cluster="local",namespace="tools",pod="web-a",node="node-a",created_by_kind="ReplicaSet"}'
+        values: "1+0x2"
+      - series: 'kube_replicaset_owner{job="kube-state-metrics",cluster="local",namespace="web",replicaset="web-123",owner_kind="Deployment",owner_name="web",owner_is_controller="true"}'
+        values: "1+0x2"
+      - series: 'kube_replicaset_owner{job="kube-state-metrics",cluster="other",namespace="tools",replicaset="web-123",owner_kind="Deployment",owner_name="web",owner_is_controller="true"}'
+        values: "1+0x2"
+    promql_expr_test:
+      - expr: pod_workload_info
+        eval_time: 1m
+        exp_samples:
+          - labels: 'pod_workload_info{cluster="local",namespace="tools",node="node-a",pod="web-a",workload="web-123",workload_kind="ReplicaSet"}'
+            value: 1
+  - name: Duplicate exporter series resolve to one Deployment workload
+    interval: 30s
+    input_series:
+      - series: 'kube_pod_owner{job="kube-state-metrics",instance="a",namespace="web",pod="web-a",owner_kind="ReplicaSet",owner_name="web-123",owner_is_controller="true"}'
+        values: "1+0x2"
+      - series: 'kube_pod_owner{job="kube-state-metrics",instance="b",namespace="web",pod="web-a",owner_kind="ReplicaSet",owner_name="web-123",owner_is_controller="true"}'
+        values: "1+0x2"
+      - series: 'kube_replicaset_owner{job="kube-state-metrics",instance="a",namespace="web",replicaset="web-123",owner_kind="Deployment",owner_name="web",owner_is_controller="true"}'
+        values: "1+0x2"
+      - series: 'kube_replicaset_owner{job="kube-state-metrics",instance="b",namespace="web",replicaset="web-123",owner_kind="Deployment",owner_name="web",owner_is_controller="true"}'
+        values: "1+0x2"
+      - series: 'kube_pod_info{job="kube-state-metrics",instance="a",namespace="web",pod="web-a",node="node-a",created_by_kind="ReplicaSet"}'
+        values: "1+0x2"
+      - series: 'kube_pod_info{job="kube-state-metrics",instance="b",namespace="web",pod="web-a",node="node-a",created_by_kind="ReplicaSet"}'
+        values: "1+0x2"
+    promql_expr_test:
+      - expr: pod_workload_info
+        eval_time: 1m
+        exp_samples:
+          - labels: 'pod_workload_info{namespace="web",node="node-a",pod="web-a",workload="web",workload_kind="Deployment"}'
+            value: 1
