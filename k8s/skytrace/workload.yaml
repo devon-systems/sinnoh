@@ -37,7 +37,7 @@ spec:
             capabilities:
               drop:
                 - NET_RAW
-          image: ghcr.io/alyraffauf/skytrace:latest@sha256:6b3b43fa1bd9fb797a8d24f35dc814ee4c83cd1791c3859888b8f5ef08eee92a
+          image: ghcr.io/alyraffauf/skytrace:latest@sha256:d0d3f9d4cd9e3a5795b64435a26b9b3478ad74972cebf93f8a83a52718fa1265
           env:
             - name: SKYTRACE_MIN_LIST_BLOCKING
               value: "5"
