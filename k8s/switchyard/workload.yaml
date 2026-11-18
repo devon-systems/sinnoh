@@ -37,7 +37,7 @@ spec:
             capabilities:
               drop:
                 - NET_RAW
-          image: ghcr.io/alyraffauf/switchyard-website:latest@sha256:2c35efabdedab518c13580f101197af973ae4e158c63b68fdd4e13f0fe9de4d6
+          image: ghcr.io/alyraffauf/switchyard-website:latest@sha256:737825f8ce1d134b5753dc72acfcba324de8f7458b91b51f544e867826649049
           ports:
             - name: http
               containerPort: 80
