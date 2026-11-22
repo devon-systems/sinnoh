@@ -26,6 +26,7 @@ resources:
   - morgan.yaml
   - switchyard.yaml
   - morsels.yaml
+  - petal.yaml
   - slingshot.yaml
   - bobbin.yaml
   - ingress.yaml

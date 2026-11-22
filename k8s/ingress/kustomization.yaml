@@ -9,6 +9,7 @@ resources:
   - morgan.yaml
   - morsels.yaml
   - skytrace.yaml
+  - petal.yaml
   - slingshot.yaml
   - snrld.yaml
   - switchyard.yaml

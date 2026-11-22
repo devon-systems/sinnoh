@@ -74,3 +74,14 @@ resource "cloudflare_dns_record" "aly_town_skytrace_atproto_txt" {
   tags     = []
   settings = {}
 }
+
+resource "cloudflare_dns_record" "aly_town_petal_a" {
+  zone_id  = local.zones.aly_town
+  name     = "petal.aly.town"
+  type     = "A"
+  content  = local.sunnyshore
+  proxied  = true
+  ttl      = 1
+  tags     = []
+  settings = {}
+}

@@ -1,0 +1,29 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: petal
+  namespace: petal
+spec:
+  secretName: petal-tls
+  issuerRef: { kind: ClusterIssuer, name: letsencrypt }
+  dnsNames: [petal.aly.town]
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata: { name: petal, namespace: petal }
+spec:
+  ingressClassName: traefik
+  tls: [{ hosts: [petal.aly.town], secretName: petal-tls }]
+  rules:
+    - host: petal.aly.town
+      http:
+        {
+          paths:
+            [
+              {
+                path: /,
+                pathType: Prefix,
+                backend: { service: { name: petal, port: { name: http } } },
+              },
+            ],
+        }
