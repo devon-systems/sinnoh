@@ -38,7 +38,7 @@ spec:
             capabilities:
               drop:
                 - ALL
-          image: ghcr.io/alyraffauf/petal-website:latest@sha256:e366b5ce6e06857306357ba8d7b98711939719609aa703edd7cd8ec050c67fc5
+          image: ghcr.io/alyraffauf/petal-website:latest@sha256:bf8a014d98fda1e15a131340835b5701b379e5b22083dabb6bb55931d2b9dc6f
           ports:
             - name: http
               containerPort: 8080
