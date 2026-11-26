@@ -43,7 +43,7 @@ spec:
                 - ALL
             seccompProfile:
               type: RuntimeDefault
-          image: atcr.io/tranquil.farm/tranquil-pds:latest@sha256:923b145e2441771f5395ff74f6292239925eadf5ceae751d542a2a671c2d7ac3
+          image: atcr.io/tranquil.farm/tranquil-pds:latest@sha256:b462bfc2d5ceb0bf0956cd2882b780f5df8bdade9fcbc43489a7a694b967faae
           env:
             - name: AWS_REGION
               value: us-east-005
