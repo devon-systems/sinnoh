@@ -90,11 +90,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1795358991,
-        "narHash": "sha256-mvuhV7fo4Du31x5Y9ixgNGmVMAZivYMuUIqOrpPYkN4=",
+        "lastModified": 1795590152,
+        "narHash": "sha256-amzKlFpPnTSE4b4oU9RQIUL6pB6p8sDiR13ca9bIHFk=",
         "owner": "nlewo",
         "repo": "comin",
-        "rev": "ccce0c589213bc646016c7f6ebfc0e5ca77a2ca7",
+        "rev": "dfd3392af1ad22b8b9f1f5a06449c0525a17bc07",
         "type": "github"
       },
       "original": {
@@ -211,11 +211,11 @@
         "uv2nix": "uv2nix_2"
       },
       "locked": {
-        "lastModified": 1795091639,
-        "narHash": "sha256-B6PXnaGI67wC4SeRRF7Ic7oKQHPG6Jhl5YwFMuMrQdY=",
+        "lastModified": 1795649756,
+        "narHash": "sha256-6Ryxsw08ZA+L131qqMdLM/po1FlsHzb1ffwnxRWq8Gg=",
         "owner": "devon-systems",
         "repo": "dvnpkgs",
-        "rev": "683fd31c7e62e4d19bbb18353325ace29d99f7ac",
+        "rev": "d3169ff13fc199c901562ba47f6b7bfcc41ae5ea",
         "type": "github"
       },
       "original": {
@@ -984,11 +984,11 @@
         "uv2nix": "uv2nix"
       },
       "locked": {
-        "lastModified": 1794801508,
-        "narHash": "sha256-xIdHqEDGdiF1PBQs5V6qsrk89KN1UtWkL2KoZTadoUE=",
+        "lastModified": 1795498270,
+        "narHash": "sha256-OJNl/yrXLwp6JxvOpLFyACDUgJ6sSUbOSz1CCwaE+s4=",
         "ref": "refs/heads/master",
-        "rev": "0d7ba3e1578f9c7d6e1496f18f565dee048b203e",
-        "revCount": 212,
+        "rev": "c9468605c27b640fee4d30fd7df904160cc6be65",
+        "revCount": 222,
         "type": "git",
         "url": "https://tangled.org/aly.codes/tg"
       },
@@ -1087,11 +1087,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1795173499,
-        "narHash": "sha256-J8IYl3oEdctyvBgWr+/L01MY5Xm0TU4WXwZDccN5jjk=",
+        "lastModified": 1795615686,
+        "narHash": "sha256-/C0FK2Fwq0aWE/GADYyYbAIdQeGfYBbWMin3tfks1NA=",
         "owner": "numtide",
         "repo": "treefmt-nix",
-        "rev": "a0a97e31a897a3537eea5c49df4f8adaa83b3b37",
+        "rev": "b7b56d3c8833016c650ca542b1230e6130299741",
         "type": "github"
       },
       "original": {
@@ -1169,11 +1169,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1795412318,
-        "narHash": "sha256-AXpLvqFtxdenntRKgRa9GgC5E4mjP5+kzPqTayf1QDA=",
+        "lastModified": 1795678343,
+        "narHash": "sha256-lunc4TTqPsUg5BwAc1ACio/7+MyeS+WHYBG6+eBE/vg=",
         "owner": "devon-systems",
         "repo": "wg-hoenn",
-        "rev": "0fe8704c45fb173cc3a2f171cbb3871acef041f7",
+        "rev": "ada62575202772b1be3221729badd0ee753c2d75",
         "type": "github"
       },
       "original": {
