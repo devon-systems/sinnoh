@@ -30,11 +30,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1794830369,
-        "narHash": "sha256-nPcDmU1i8Srh97DvrMwo3Ydl3F+F3ScjeIdw4JOZ/mM=",
+        "lastModified": 1795807883,
+        "narHash": "sha256-Jm+0p2s2UQpOBs6VcCh0+le43AwbavNg/wQUDyC+ngk=",
         "owner": "alyraffauf",
         "repo": "blzrd",
-        "rev": "6f80ca3a08d32b66335cba499d00a63edd309bc0",
+        "rev": "36e7a73a92f8cba363f609b26b47b210398bac21",
         "type": "github"
       },
       "original": {
@@ -211,11 +211,11 @@
         "uv2nix": "uv2nix_2"
       },
       "locked": {
-        "lastModified": 1795649756,
-        "narHash": "sha256-6Ryxsw08ZA+L131qqMdLM/po1FlsHzb1ffwnxRWq8Gg=",
+        "lastModified": 1795787291,
+        "narHash": "sha256-AQQzeGdO5/fs3gh66Q3U5P486nAsOZAqbr/NxJauJ2A=",
         "owner": "devon-systems",
         "repo": "dvnpkgs",
-        "rev": "d3169ff13fc199c901562ba47f6b7bfcc41ae5ea",
+        "rev": "984937573aa51432ef9fb5f55bb609008ccb3d8c",
         "type": "github"
       },
       "original": {
